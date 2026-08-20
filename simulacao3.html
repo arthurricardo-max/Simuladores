@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Laboratório Virtual Interativo: Pêndulo Simples</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: #f0f2f5;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin: 0;
+      padding: 20px;
+    }
+    h1 { color: #1a252f; margin-bottom: 5px; }
+    p.subtitulo { color: #6c757d; margin-top: 0; margin-bottom: 20px; font-size: 14px; }
+
+    .container {
+      display: flex;
+      gap: 20px;
+      background: white;
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+
+    canvas {
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      background-color: #fafafa;
+      cursor: default;
+    }
+
+    .controles {
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+      width: 290px;
+    }
+
+    .botoes-acao {
+      display: flex;
+      gap: 8px;
+    }
+
+    button {
+      flex: 1;
+      padding: 10px;
+      border: none;
+      border-radius: 6px;
+      font-weight: bold;
+      cursor: pointer;
+      font-size: 13px;
+      transition: background 0.2s;
+    }
+
+    .btn-play { background-color: #2ecc71; color: white; }
+    .btn-play:hover { background-color: #27ae60; }
+
+    .btn-pause { background-color: #f39c12; color: white; }
+    .btn-pause:hover { background-color: #d35400; }
+
+    .btn-reset { background-color: #e74c3c; color: white; }
+    .btn-reset:hover { background-color: #c0392b; }
+
+    .btn-slow { background-color: #9b59b6; color: white; }
+    .btn-slow:hover { background-color: #8e44ad; }
+
+    .controle-grupo {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+
+    .input-com-unidade {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    input[type=number] {
+      width: 80px;
+      padding: 6px;
+      border: 1px solid #ced4da;
+      border-radius: 4px;
+      font-size: 14px;
+      font-weight: bold;
+      color: #2c3e50;
+    }
+
+    label { font-size: 13px; font-weight: bold; color: #333; }
+    input[type=range] { width: 100%; cursor: pointer; }
+
+    .painel-dados {
+      background: #f8f9fa;
+      border: 1px solid #e9ecef;
+      padding: 12px;
+      border-radius: 6px;
+      font-size: 13px;
+      color: #2c3e50;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .instrucoes {
+      background-color: #e8f4f8;
+      border-left: 4px solid #3498db;
+      padding: 8px 12px;
+      border-radius: 4px;
+      font-size: 12px;
+      color: #2980b9;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>🔬 Laboratório Interativo de Física</h1>
+  <p class="subtitulo">Controle a velocidade do tempo para analisar o movimento!</p>
+
+  <div class="container">
+    <canvas id="labCanvas" width="450" height="420"></canvas>
+
+    <div class="controles">
+      <div class="botoes-acao">
+        <button id="btnPlayPause" class="btn-play">▶️ Iniciar</button>
+        <button id="btnReset" class="btn-reset">🔄 Resetar</button>
+      </div>
+
+      <!-- NOVO: BOTÃO DE CÂMERA LENTA RÁPIDA -->
+      <button id="btnSlowMotion" class="btn-slow">🐢 Câmera Lenta (0.3x)</button>
+
+      <div class="instrucoes">
+        💡 <b>Dica:</b> Reduza a velocidade da simulação para ver a troca entre Energia Potencial e Cinética em câmera lenta.
+      </div>
+
+      <!-- NOVO: SLIDER DE CONTROLE DA VELOCIDADE DO TEMPO -->
+      <div class="controle-grupo" style="background: #f8f0fb; padding: 8px; border-radius: 6px; border: 1px solid #e1d0e8;">
+        <label for="velocidadeTempo">Velocidade do Tempo (Velocidade): <span id="valVelocidadeTempo">1.0</span>x</label>
+        <input type="range" id="velocidadeTempo" min="0.1" max="2.0" step="0.1" value="1.0">
+      </div>
+
+      <div class="controle-grupo" style="background: #f1f3f5; padding: 8px; border-radius: 6px;">
+        <label for="inputAngulo">Ângulo Inicial (θ):</label>
+        <div class="input-com-unidade">
+          <input type="number" id="inputAngulo" value="45" min="-90" max="90" step="1">
+          <span>graus (°)</span>
+        </div>
+      </div>
+
+      <div class="controle-grupo">
+        <label for="comprimento">Comprimento do Fio (L): <span id="valL">180</span> px</label>
+        <input type="range" id="comprimento" min="80" max="260" value="180">
+      </div>
+
+      <div class="controle-grupo">
+        <label for="gravidade">Gravidade (g): <span id="valG">9.8</span> m/s²</label>
+        <input type="range" id="gravidade" min="1" max="25" step="0.5" value="9.8">
+      </div>
+
+      <div class="controle-grupo">
+        <label for="massa">Massa (m): <span id="valM">1.0</span> kg</label>
+        <input type="range" id="massa" min="0.5" max="5.0" step="0.5" value="1.0">
+      </div>
+
+      <div class="painel-dados">
+        <div><b>Estado:</b> <span id="valEstado" style="font-weight:bold; color:#e67e22;">Pausado</span></div>
+        <div><b>Ângulo Atual:</b> <span id="valAngulo">45.0</span>°</div>
+        <div><b>Período Teórico (T):</b> <span id="valT">0</span> s</div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const canvas = document.getElementById('labCanvas');
+    const ctx = canvas.getContext('2d');
+
+    // Estado do Tempo/Simulação
+    let emExecucao = false;
+    let fatorVelocidadeTempo = 1.0; // Multiplicador de velocidade (1.0x = Normal, <1.0x = Lento)
+
+    // Variáveis Físicas
+    let angulo = Math.PI / 4; // 45° inicial
+    let velAngular = 0;
+    let acelAngular = 0;
+
+    let L = parseFloat(document.getElementById('comprimento').value);
+    let g = parseFloat(document.getElementById('gravidade').value);
+    let m = parseFloat(document.getElementById('massa').value);
+
+    const origem = { x: canvas.width / 2, y: 60 };
+    let arrastando = false;
+    let posMassa = { x: 0, y: 0 };
+
+    // Elementos da Interface
+    const btnPlayPause = document.getElementById('btnPlayPause');
+    const btnReset = document.getElementById('btnReset');
+    const btnSlowMotion = document.getElementById('btnSlowMotion');
+    const sliderVelocidadeTempo = document.getElementById('velocidadeTempo');
+    const valVelocidadeTempo = document.getElementById('valVelocidadeTempo');
+    const valEstado = document.getElementById('valEstado');
+    const inputAngulo = document.getElementById('inputAngulo');
+
+    // --- CONTROLE DOS BOTÕES ---
+    function alternarSimulacao() {
+      emExecucao = !emExecucao;
+      if (emExecucao) {
+        btnPlayPause.innerText = '⏸️ Pausar';
+        btnPlayPause.className = 'btn-pause';
+        valEstado.innerText = 'Em Movimento';
+        valEstado.style.color = '#27ae60';
+      } else {
+        btnPlayPause.innerText = '▶️ Iniciar';
+        btnPlayPause.className = 'btn-play';
+        valEstado.innerText = 'Pausado';
+        valEstado.style.color = '#e67e22';
+      }
+    }
+
+    function resetarSimulacao() {
+      emExecucao = false;
+      const anguloGraus = parseFloat(inputAngulo.value) || 0;
+      angulo = anguloGraus * (Math.PI / 180);
+      velAngular = 0;
+      acelAngular = 0;
+      btnPlayPause.innerText = '▶️ Iniciar';
+      btnPlayPause.className = 'btn-play';
+      valEstado.innerText = 'Pausado';
+      valEstado.style.color = '#e67e22';
+    }
+
+    // Alterna rapidamente entre velocidade normal (1.0x) e câmera lenta (0.3x)
+    function alternarCameraLenta() {
+      if (fatorVelocidadeTempo === 1.0) {
+        fatorVelocidadeTempo = 0.3;
+        btnSlowMotion.innerText = '🐇 Velocidade Normal (1.0x)';
+      } else {
+        fatorVelocidadeTempo = 1.0;
+        btnSlowMotion.innerText = '🐢 Câmera Lenta (0.3x)';
+      }
+      sliderVelocidadeTempo.value = fatorVelocidadeTempo;
+      valVelocidadeTempo.innerText = fatorVelocidadeTempo.toFixed(1);
+    }
+
+    btnPlayPause.addEventListener('click', alternarSimulacao);
+    btnReset.addEventListener('click', resetarSimulacao);
+    btnSlowMotion.addEventListener('click', alternarCameraLenta);
+
+    // Ajuste fino da velocidade pelo Slider
+    sliderVelocidadeTempo.addEventListener('input', (e) => {
+      fatorVelocidadeTempo = parseFloat(e.target.value);
+      valVelocidadeTempo.innerText = fatorVelocidadeTempo.toFixed(1);
+      if (fatorVelocidadeTempo === 1.0) {
+        btnSlowMotion.innerText = '🐢 Câmera Lenta (0.3x)';
+      } else if (fatorVelocidadeTempo === 0.3) {
+        btnSlowMotion.innerText = '🐇 Velocidade Normal (1.0x)';
+      }
+    });
+
+    // --- ENTRADA DE ÂNGULO POR TEXTO ---
+    inputAngulo.addEventListener('input', (e) => {
+      let val = parseFloat(e.target.value);
+      if (!isNaN(val)) {
+        if (val > 90) val = 90;
+        if (val < -90) val = -90;
+        angulo = val * (Math.PI / 180);
+        velAngular = 0;
+      }
+    });
+
+    // --- CÁLCULO PRECISO DE COLISÃO DO MOUSE ---
+    function obterRaioMassa() {
+      return 14 + m * 3;
+    }
+
+    function obterPosicaoMouse(e) {
+      const rect = canvas.getBoundingClientRect();
+      const scaleX = canvas.width / rect.width;
+      const scaleY = canvas.height / rect.height;
+      return {
+        x: (e.clientX - rect.left) * scaleX,
+        y: (e.clientY - rect.top) * scaleY
+      };
+    }
+
+    function checarCliqueMassa(mouseX, mouseY) {
+      const dx = mouseX - posMassa.x;
+      const dy = mouseY - posMassa.y;
+      const raio = obterRaioMassa() + 10;
+      return (dx * dx + dy * dy) <= (raio * raio);
+    }
+
+    // --- EVENTOS DO MOUSE ---
+    canvas.addEventListener('mousedown', (e) => {
+      const mouse = obterPosicaoMouse(e);
+      if (checarCliqueMassa(mouse.x, mouse.y)) {
+        arrastando = true;
+        velAngular = 0;
+      }
+    });
+
+    canvas.addEventListener('mousemove', (e) => {
+      const mouse = obterPosicaoMouse(e);
+
+      if (checarCliqueMassa(mouse.x, mouse.y) || arrastando) {
+        canvas.style.cursor = arrastando ? 'grabbing' : 'grab';
+      } else {
+        canvas.style.cursor = 'default';
+      }
+
+      if (arrastando) {
+        const dx = mouse.x - origem.x;
+        const dy = mouse.y - origem.y;
+
+        if (dy > 0 || Math.abs(dx) > 0) {
+          angulo = Math.atan2(dx, dy);
+
+          if (angulo > Math.PI / 2) angulo = Math.PI / 2;
+          if (angulo < -Math.PI / 2) angulo = -Math.PI / 2;
+        }
+
+        const anguloGraus = (angulo * (180 / Math.PI)).toFixed(1);
+        inputAngulo.value = anguloGraus;
+      }
+    });
+
+    window.addEventListener('mouseup', () => {
+      if (arrastando) {
+        arrastando = false;
+        velAngular = 0;
+        if (!emExecucao) {
+          alternarSimulacao();
+        }
+      }
+    });
+
+    // --- CONTROLES DE SLIDERS ---
+    document.getElementById('comprimento').addEventListener('input', (e) => {
+      L = parseFloat(e.target.value);
+      document.getElementById('valL').innerText = L;
+    });
+
+    document.getElementById('gravidade').addEventListener('input', (e) => {
+      g = parseFloat(e.target.value);
+      document.getElementById('valG').innerText = g;
+    });
+
+    document.getElementById('massa').addEventListener('input', (e) => {
+      m = parseFloat(e.target.value);
+      document.getElementById('valM').innerText = m;
+    });
+
+    // --- LOOP PRINCIPAL DO SIMULADOR ---
+    function animar() {
+      if (emExecucao && !arrastando) {
+        // Aplica o fator de velocidade do tempo na aceleração e velocidade
+        acelAngular = (-1 * (g / 10) / L) * Math.sin(angulo);
+        velAngular += acelAngular * fatorVelocidadeTempo;
+
+        // Ajusta o atrito proporcionalmente à velocidade do tempo
+        const atritoAjustado = Math.pow(0.998, fatorVelocidadeTempo);
+        velAngular *= atritoAjustado;
+
+        angulo += velAngular * fatorVelocidadeTempo;
+
+        if (document.activeElement !== inputAngulo) {
+          inputAngulo.value = (angulo * (180 / Math.PI)).toFixed(1);
+        }
+      }
+
+      posMassa.x = origem.x + L * Math.sin(angulo);
+      posMassa.y = origem.y + L * Math.cos(angulo);
+
+      const anguloGraus = (angulo * (180 / Math.PI)).toFixed(1);
+      const periodo = (2 * Math.PI * Math.sqrt(L / (g * 10))).toFixed(2);
+      document.getElementById('valAngulo').innerText = anguloGraus;
+      document.getElementById('valT').innerText = periodo;
+
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      // Teto
+      ctx.beginPath();
+      ctx.moveTo(origem.x - 60, origem.y);
+      ctx.lineTo(origem.x + 60, origem.y);
+      ctx.strokeStyle = '#2c3e50';
+      ctx.lineWidth = 4;
+      ctx.stroke();
+
+      // Fio
+      ctx.beginPath();
+      ctx.moveTo(origem.x, origem.y);
+      ctx.lineTo(posMassa.x, posMassa.y);
+      ctx.strokeStyle = arrastando ? '#e67e22' : '#7f8c8d';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+
+      // Bolinha
+      const raio = obterRaioMassa();
+      ctx.beginPath();
+      ctx.arc(posMassa.x, posMassa.y, raio, 0, Math.PI * 2);
+      ctx.fillStyle = arrastando ? '#e67e22' : '#e74c3c';
+      ctx.fill();
+      ctx.strokeStyle = '#c0392b';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+
+      desenharGraficoEnergia();
+
+      requestAnimationFrame(animar);
+    }
+
+    function desenharGraficoEnergia() {
+      const h = L * (1 - Math.cos(angulo));
+      const v = (velAngular / fatorVelocidadeTempo) * L;
+
+      const Ep = m * (g / 10) * h;
+      const Ek = 0.5 * m * (v * v) / 100;
+      const Em = Math.max(Ep + Ek, 0.001);
+
+      const barX = 20;
+      const barY = canvas.height - 40;
+      const larguraMax = 120;
+
+      ctx.font = '11px Arial';
+
+      ctx.fillStyle = '#2ecc71';
+      ctx.fillRect(barX, barY, (Ep / Em) * larguraMax, 10);
+      ctx.fillStyle = '#333';
+      ctx.fillText('E. Potencial (Ep)', barX, barY - 4);
+
+      ctx.fillStyle = '#3498db';
+      ctx.fillRect(barX + 160, barY, (Ek / Em) * larguraMax, 10);
+      ctx.fillStyle = '#333';
+      ctx.fillText('E. Cinética (Ek)', barX + 160, barY - 4);
+    }
+
+    animar();
+  </script>
+</body>
+</html>

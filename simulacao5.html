@@ -1,0 +1,655 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IA Physics Discovery: Queda Livre Interativa (Modo Livre)</title>
+    <!-- Chart.js para os gráficos modernos -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --bg-color: #F8F9FA;
+            --card-border: #CED4DA;
+            --primary-blue: #3498DB;
+            --primary-green: #2ECC71;
+            --primary-red: #E74C3C;
+            --text-dark: #2C3E50;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background-color: var(--bg-color);
+            margin: 0;
+            padding: 20px;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1450px;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        /* Parte Superior: Painéis Visuais */
+        .topo-layout {
+            display: grid;
+            grid-template-columns: 1fr 2fr 1.4fr;
+            gap: 20px;
+            height: 550px;
+        }
+
+        @media (max-width: 1024px) {
+            .topo-layout {
+                grid-template-columns: 1fr;
+                height: auto;
+            }
+        }
+
+        .painel {
+            background: white;
+            border: 1px solid var(--card-border);
+            border-radius: 8px;
+            padding: 15px;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .canvas-container {
+            position: relative;
+            flex-grow: 1;
+            width: 100%;
+            height: 100%;
+        }
+
+        /* Painel Lateral de Métricas */
+        .painel-metricas {
+            text-align: center;
+            overflow-y: auto;
+        }
+
+        .titulo-res {
+            font-weight: bold;
+            font-size: 14px;
+            color: var(--text-dark);
+            margin-bottom: 10px;
+        }
+
+        .g-deduzido {
+            font-size: 22px;
+            font-weight: bold;
+            color: var(--primary-green);
+            margin-bottom: 5px;
+        }
+
+        .formula-predita {
+            font-size: 11px;
+            color: #34495E;
+            margin-bottom: 15px;
+        }
+
+        .passo-matematico {
+            background-color: #F8F9FA;
+            border: 1px dashed #0D6EFD;
+            border-radius: 6px;
+            padding: 10px;
+            font-size: 12px;
+            margin-bottom: 15px;
+            text-align: left;
+        }
+
+        .passo-matematico h4 {
+            margin: 0 0 5px 0;
+            color: #0D6EFD;
+            font-size: 11px;
+        }
+
+        .passo-matematico p {
+            margin: 4px 0;
+            text-align: center;
+        }
+
+        /* Tabela customizada */
+        .tabela-container {
+            flex-grow: 1;
+            overflow-y: auto;
+            margin-top: 5px;
+            border: 1px solid #E0E0E0;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 11px;
+            text-align: left;
+        }
+
+        th {
+            background-color: #F1F1F1;
+            position: sticky;
+            top: 0;
+            padding: 6px;
+            border-bottom: 1px solid #E0E0E0;
+        }
+
+        td {
+            padding: 6px;
+            border-bottom: 1px solid #E0E0E0;
+            background: #FAFAFA;
+        }
+
+        /* Parte Inferior: Controles */
+        .controles-layout {
+            display: grid;
+            grid-template-columns: 3fr 1.5fr;
+            gap: 20px;
+        }
+
+        @media (max-width: 768px) {
+            .controles-layout {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .painel-controle-ambiente {
+            background-color: #EBF3FC;
+            border: 1px solid #B4D3F8;
+            border-radius: 8px;
+            padding: 15px;
+        }
+
+        .painel-controle-simulacao {
+            background-color: #EAF5EA;
+            border: 1px solid #BCD1BC;
+            border-radius: 8px;
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .titulo-controle {
+            font-weight: bold;
+            font-size: 12px;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+
+        .botoes-simulacao {
+            display: flex;
+            gap: 10px;
+        }
+
+        .grid-controles {
+            display: grid;
+            grid-template-columns: auto 1fr auto;
+            gap: 10px 15px;
+            align-items: center;
+        }
+
+        .grid-controles label {
+            font-size: 11px;
+            font-weight: bold;
+            color: #495057;
+        }
+
+        .grid-controles input[type="range"] {
+            width: 100%;
+            height: 18px;
+        }
+
+        .grid-controles input[type="text"] {
+            width: 75px;
+            padding: 2px;
+            font-size: 11px;
+            border: 1px solid #CED4DA;
+            border-radius: 4px;
+            text-align: center;
+        }
+
+        /* Botões de Controle */
+        .btn-action {
+            flex: 1;
+            padding: 8px;
+            border: none;
+            border-radius: 4px;
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 13px;
+            transition: background 0.2s;
+        }
+
+        .btn-pause.pausado {
+            background-color: #D1E7DD;
+            color: #0F5132;
+        }
+
+        .btn-pause.ativo {
+            background-color: #F8D7DA;
+            color: #842029;
+        }
+
+        .btn-reset {
+            background-color: #FFE69C;
+            color: #664D03;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <!-- Bloco Superior -->
+    <div class="topo-layout">
+        <!-- 1. Simulação Física -->
+        <div class="painel">
+            <div class="canvas-container">
+                <canvas id="chartQueda"></canvas>
+            </div>
+        </div>
+
+        <!-- 2. Gráfico Estatístico -->
+        <div class="painel">
+            <div class="canvas-container">
+                <canvas id="chartEstatistico"></canvas>
+            </div>
+        </div>
+
+        <!-- 3. Métricas e Tabelas -->
+        <div class="painel painel-metricas">
+            <div class="titulo-res">Dedução e Métricas da IA</div>
+            <div id="gDeduzido" class="g-deduzido">g da IA: 9.80 m/s²</div>
+            <div id="formulaPredita" class="formula-predita">Equação Predita: h = --</div>
+
+            <div class="passo-matematico">
+                <h4 id="passoTitulo"><b>Passo a Passo Matemático (Para t = 0.00 s):</b></h4>
+                <p>Fórmula: <i>h</i>(<i>t</i>) = <i>h</i><sub>0</sub> &minus; 0.5 · <i>g</i><sub>IA</sub> · <i>t</i><sup>2</sup></p>
+                <p id="passoSubstituido" style="color: #555; font-size: 11px;">Substituindo: --</p>
+                <p id="passoResposta" style="color: var(--primary-red); font-weight: bold;">Resultado em Tempo Real: --</p>
+            </div>
+
+            <div style="font-weight: bold; font-size: 11px; color: #495057; text-align: left; margin-bottom: 3px;">
+                Amostras do Experimento (Coletado vs Previsto)
+            </div>
+            <div class="tabela-container">
+                <table id="tabelaAmostras">
+                    <thead>
+                        <tr>
+                            <th>Tempo (t)</th>
+                            <th>h Coletado</th>
+                            <th>h Previsto</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Gerado dinamicamente -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bloco Inferior (Controles) -->
+    <div class="controles-layout">
+        <!-- Painel 1: Ambiente Físico Real -->
+        <div class="painel-controle-ambiente">
+            <div class="titulo-controle" style="color: #0A58CA;">1. Ambiente Físico Real (Gerador de Dados)</div>
+            <div class="grid-controles">
+                <label>g Real (m/s²)</label>
+                <input type="range" id="sldG" min="-500" max="500" value="98">
+                <input type="text" id="txtG" value="9.8">
+
+                <label>Sensor Ruído</label>
+                <input type="range" id="sldRuido" min="0" max="500" value="4">
+                <input type="text" id="txtRuido" value="0.4">
+
+                <label>Nº Amostras</label>
+                <input type="range" id="sldPts" min="5" max="500" value="35">
+                <input type="text" id="txtPts" value="35">
+
+                <label>Altura h0 (m)</label>
+                <input type="range" id="sldH0" min="100" max="5000" value="200">
+                <input type="text" id="txtH0" value="20.0">
+            </div>
+        </div>
+
+        <!-- Painel 2: Controle de Simulação -->
+        <div class="painel-controle-simulacao">
+            <div class="titulo-controle" style="color: #1E4620;">2. Controle de Simulação</div>
+            <div class="botoes-simulacao">
+                <button id="btnPause" class="btn-action btn-pause ativo">⏸️ Pausar</button>
+                <button id="btnReset" class="btn-action btn-reset">🔄 Resetar</button>
+            </div>
+            <div class="grid-controles" style="flex-grow: 1; align-content: center;">
+                <label>Tempo t (s)</label>
+                <input type="range" id="sldT" min="0" max="500" value="0">
+                <input type="text" id="txtT" value="0.00">
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // --- Estado do Aplicativo ---
+    let state = {
+        g_real: 9.8,
+        ruido: 0.4,
+        num_pontos: 35,
+        t_atual: 0.0,
+        h0: 20.0,
+        g_deduzido: 9.8,
+        animacao_ativa: true,
+        t_dados: [],
+        h_dados: []
+    };
+
+    const DT = 0.016; // ~60 FPS
+    let intervalId = null;
+
+    // --- Instâncias dos Gráficos (Chart.js) ---
+    let chartQuedaInstance;
+    let chartEstatisticoInstance;
+
+    // --- Elementos do DOM ---
+    const sldG = document.getElementById('sldG'), txtG = document.getElementById('txtG');
+    const sldRuido = document.getElementById('sldRuido'), txtRuido = document.getElementById('txtRuido');
+    const sldPts = document.getElementById('sldPts'), txtPts = document.getElementById('txtPts');
+    const sldH0 = document.getElementById('sldH0'), txtH0 = document.getElementById('txtH0');
+    const sldT = document.getElementById('sldT'), txtT = document.getElementById('txtT');
+    const btnPause = document.getElementById('btnPause');
+    const btnReset = document.getElementById('btnReset');
+
+    // --- Funções de IA/Regressão Linear Matricial ---
+    function treinarIARegressao() {
+        state.t_dados = [];
+        state.h_dados = [];
+        
+        const passo = (4.0 - 0.2) / (state.num_pontos - 1);
+        
+        function normalRandom() {
+            let u = 0, v = 0;
+            while(u === 0) u = Math.random();
+            while(v === 0) v = Math.random();
+            return Math.sqrt(-2.0 * Math.log(u)) * Math.cos(2.0 * Math.PI * v);
+        }
+
+        let soma_X2 = 0;
+        let soma_XY = 0;
+
+        for (let i = 0; i < state.num_pontos; i++) {
+            let t = 0.2 + i * passo;
+            state.t_dados.push(t);
+            
+            let queda_real = 0.5 * state.g_real * (t * t) + (normalRandom() * state.ruido);
+            let h = state.h0 - queda_real;
+            state.h_dados.push(h);
+
+            let x_val = t * t;
+            soma_X2 += x_val * x_val;
+            soma_XY += x_val * queda_real;
+        }
+
+        let beta = soma_X2 !== 0 ? (soma_XY / soma_X2) : 0;
+        state.g_deduzido = 2 * beta;
+    }
+
+    // --- Inicialização dos Gráficos ---
+    function initCharts() {
+        const ctxQueda = document.getElementById('chartQueda').getContext('2d');
+        chartQuedaInstance = new Chart(ctxQueda, {
+            type: 'scatter',
+            data: {
+                datasets: [
+                    { label: 'Bola', data: [{x: 0, y: state.h0}], pointRadius: 12, backgroundColor: '#3498DB', borderWidth: 1, borderColor: '#fff' },
+                    { label: 'Vetor V', data: [], type: 'line', borderColor: '#E67E22', borderWidth: 3, fill: false, pointRadius: 0 },
+                    { label: 'Chão Fixo', data: [{x: -2, y: 0}, {x: 2, y: 0}], type: 'line', borderColor: '#7F8C8D', borderWidth: 4, fill: false, pointRadius: 0 }
+                ]
+            },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    x: { min: -2, max: 2, display: false },
+                    y: { min: 0, max: 27, title: { display: true, text: 'Altura h (m)' } }
+                }
+            }
+        });
+
+        const ctxEst = document.getElementById('chartEstatistico').getContext('2d');
+        chartEstatisticoInstance = new Chart(ctxEst, {
+            type: 'scatter',
+            data: {
+                datasets: [
+                    { label: 'Dados Experimentais', data: [], pointRadius: 3, backgroundColor: '#E74C3C' },
+                    { label: 'Curva IA', data: [], type: 'line', borderColor: '#2ECC71', borderWidth: 3, fill: false, pointRadius: 0 },
+                    { label: 'Indicador Tempo', data: [], type: 'line', borderColor: '#3498DB', borderWidth: 1, borderDash: [5, 5], fill: false, pointRadius: 0 }
+                ]
+            },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    x: { min: 0, max: 3.5, title: { display: true, text: 'Tempo t (s)' } },
+                    y: { min: -2, max: 27, title: { display: true, text: 'Altura h (m)' } }
+                }
+            }
+        });
+    }
+
+    // --- Atualização da Interface ---
+    function atualizarInterface() {
+        let queda_atual = 0.5 * state.g_deduzido * (state.t_atual * state.t_atual);
+        let h_atual_ia = state.h0 - queda_atual;
+        if (state.g_deduzido >= 0) h_atual_ia = Math.max(0.0, h_atual_ia);
+
+        let t_max_grafico = Math.max(3.5, state.t_atual + 1.0);
+        let t_curva = [];
+        let h_curva_ia = [];
+        
+        for(let i=0; i<=100; i++){
+            let t = (t_max_grafico / 100) * i;
+            t_curva.push(t);
+            h_curva_ia.push(state.h0 - (0.5 * state.g_deduzido * (t * t)));
+        }
+
+        let todos_h = [state.h0, h_atual_ia, ...state.h_dados, ...h_curva_ia];
+        let h_min = Math.min(...todos_h);
+        let h_max = Math.max(...todos_h);
+        let margem_h = Math.max(5.0, (h_max - h_min) * 0.1);
+
+        let y_min_estatistico = h_min - margem_h;
+        let y_max = h_max + margem_h;
+
+        chartQuedaInstance.options.scales.y.min = 0;
+        chartQuedaInstance.options.scales.y.max = y_max;
+        
+        let raioBolaCompensacao = (y_max - 0) * 0.015; 
+        let y_bola_ajustado = h_atual_ia;
+        
+        if (h_atual_ia <= 0) {
+            y_bola_ajustado = 0 + raioBolaCompensacao;
+        }
+
+        chartQuedaInstance.data.datasets[0].data = [{x: 0, y: y_bola_ajustado}];
+        
+        let v_instantanea = state.g_deduzido * state.t_atual;
+        if (state.t_atual > 0.05 && h_atual_ia > 0) {
+            chartQuedaInstance.data.datasets[1].data = [
+                {x: 0, y: y_bola_ajustado},
+                {x: 0, y: Math.max(0, y_bola_ajustado - (v_instantanea * 0.15))}
+            ];
+        } else {
+            chartQuedaInstance.data.datasets[1].data = [];
+        }
+        chartQuedaInstance.update('none');
+
+        chartEstatisticoInstance.options.scales.x.max = t_max_grafico;
+        chartEstatisticoInstance.options.scales.y.min = y_min_estatistico;
+        chartEstatisticoInstance.options.scales.y.max = y_max;
+        chartEstatisticoInstance.data.datasets[0].data = state.t_dados.map((t, idx) => ({x: t, y: state.h_dados[idx]}));
+        chartEstatisticoInstance.data.datasets[1].data = t_curva.map((t, idx) => ({x: t, y: h_curva_ia[idx]}));
+        chartEstatisticoInstance.data.datasets[2].data = [{x: state.t_atual, y: y_min_estatistico}, {x: state.t_atual, y: y_max}];
+        chartEstatisticoInstance.update('none');
+
+        let erro_percentual = state.g_real !== 0 ? (Math.abs(state.g_real - state.g_deduzido) / Math.abs(state.g_real) * 100) : 0.0;
+        document.getElementById('gDeduzido').innerText = `g da IA: ${state.g_deduzido.toFixed(2)} m/s²`;
+        document.getElementById('formulaPredita').innerText = `Equação Predita: h = ${state.h0.toFixed(1)} - 0.5 · ${state.g_deduzido.toFixed(2)} · t²  |  Erro: ${erro_percentual.toFixed(2)}%`;
+
+        document.getElementById('passoTitulo').innerHTML = `<b>Passo a Passo Matemático (Para t = ${state.t_atual.toFixed(2)} s):</b>`;
+        document.getElementById('passoSubstituido').innerHTML = `Substituindo: <i>h</i> = ${state.h0.toFixed(1)} &minus; 0.5 · (${state.g_deduzido.toFixed(2)}) · (${state.t_atual.toFixed(2)})<sup>2</sup>`;
+        document.getElementById('passoResposta').innerText = `Resultado em Tempo Real: h = ${h_atual_ia.toFixed(2)} m`;
+
+        const tbody = document.querySelector('#tabelaAmostras tbody');
+        tbody.innerHTML = '';
+        let passo_amostra = Math.max(1, Math.floor(state.t_dados.length / 10));
+
+        for(let i = 0; i < 10; i++) {
+            let idx_dados = Math.min(i * passo_amostra, state.t_dados.length - 1);
+            let t_val = state.t_dados[idx_dados];
+            let h_col = state.h_dados[idx_dados];
+            let h_prev = state.h0 - (0.5 * state.g_deduzido * (t_val * t_val));
+
+            let row = `<tr>
+                <td>${t_val.toFixed(2)} s</td>
+                <td>${h_col.toFixed(2)} m</td>
+                <td>${h_prev.toFixed(2)} m</td>
+            </tr>`;
+            tbody.innerHTML += row;
+        }
+    }
+
+    // --- Loop de Animação ---
+    function rodarFrame() {
+        if (state.animacao_ativa) {
+            let queda_atual = 0.5 * state.g_deduzido * (state.t_atual * state.t_atual);
+            let h_atual_ia = state.h0 - queda_atual;
+
+            if (state.g_deduzido >= 0 && h_atual_ia <= 0) {
+                forçarPausa();
+                return;
+            } else if (state.g_deduzido < 0 && h_atual_ia >= (Math.max(state.h0, 20.0) * 3)) {
+                forçarPausa();
+                return;
+            }
+
+            state.t_atual += DT;
+
+            let val_t_norm = Math.floor(state.t_atual * 10);
+            if (val_t_norm > parseInt(sldT.max)) {
+                sldT.max = val_t_norm + 50;
+            }
+
+            sldT.value = val_t_norm;
+            txtT.value = state.t_atual.toFixed(2);
+
+            atualizarInterface();
+        }
+    }
+
+    function togglePause() {
+        state.animacao_ativa = !state.animacao_active; // correção de digitação interna
+        state.animacao_ativa = !document.getElementById('btnPause').classList.contains('pausado');
+        
+        if(state.animacao_ativa) {
+            forçarPausa();
+        } else {
+            forçarPlay();
+        }
+    }
+
+    function forçarPausa() {
+        state.animacao_ativa = false;
+        btnPause.innerText = "▶️ Play";
+        btnPause.className = "btn-action btn-pause pausado";
+    }
+
+    function forçarPlay() {
+        state.animacao_ativa = true;
+        btnPause.innerText = "⏸️ Pausar";
+        btnPause.className = "btn-action btn-pause ativo";
+    }
+
+    // --- Nova Função de Reset ---
+    function resetarSimulacao() {
+        forçarPausa();
+        state.t_atual = 0.0;
+        sldT.value = 0;
+        txtT.value = "0.00";
+        atualizarInterface();
+    }
+
+    // --- Sincronização e Eventos de Input ---
+    function setupEventos() {
+        sldG.addEventListener('input', (e) => {
+            state.g_real = parseFloat(e.target.value) / 10.0;
+            txtG.value = state.g_real.toFixed(1);
+            treinarIARegressao();
+            atualizarInterface();
+        });
+        sldRuido.addEventListener('input', (e) => {
+            state.ruido = parseFloat(e.target.value) / 10.0;
+            txtRuido.value = state.ruido.toFixed(1);
+            treinarIARegressao();
+            atualizarInterface();
+        });
+        sldPts.addEventListener('input', (e) => {
+            state.num_pontos = parseInt(e.target.value);
+            txtPts.value = state.num_pontos;
+            treinarIARegressao();
+            atualizarInterface();
+        });
+        sldH0.addEventListener('input', (e) => {
+            state.h0 = parseFloat(e.target.value) / 10.0;
+            txtH0.value = state.h0.toFixed(1);
+            treinarIARegressao();
+            atualizarInterface();
+        });
+        sldT.addEventListener('input', (e) => {
+            state.t_atual = parseFloat(e.target.value) / 10.0;
+            txtT.value = state.t_atual.toFixed(2);
+            atualizarInterface();
+        });
+
+        const tratarInputManual = (txtElement, sldElement, prop, mult, retreinar) => {
+            txtElement.addEventListener('keydown', (e) => {
+                if(e.key === 'Enter') {
+                    let val = parseFloat(txtElement.value.replace(',', '.'));
+                    if(!isNaN(val)) {
+                        let val_norm = Math.floor(val * mult);
+                        if(val_norm > parseInt(sldElement.max)) sldElement.max = val_norm + Math.floor(50 * mult);
+                        if(val_norm < parseInt(sldElement.min)) sldElement.min = val_norm - Math.floor(50 * mult);
+                        
+                        state[prop] = val;
+                        sldElement.value = val_norm;
+                        if(retreinar) treinarIARegressao();
+                        atualizarInterface();
+                    }
+                }
+            });
+        };
+
+        tratarInputManual(txtG, sldG, 'g_real', 10, true);
+        tratarInputManual(txtRuido, sldRuido, 'ruido', 10, true);
+        tratarInputManual(txtPts, sldPts, 'num_pontos', 1, true);
+        tratarInputManual(txtH0, sldH0, 'h0', 10, true);
+        tratarInputManual(txtT, sldT, 't_atual', 10, false);
+
+        btnPause.addEventListener('click', () => {
+            if (state.animacao_ativa) forçarPausa();
+            else forçarPlay();
+        });
+        
+        btnReset.addEventListener('click', resetarSimulacao);
+    }
+
+    window.onload = function() {
+        initCharts();
+        treinarIARegressao();
+        setupEventos();
+        atualizarInterface();
+        intervalId = setInterval(rodarFrame, 16);
+    };
+</script>
+
+</body>
+</html>

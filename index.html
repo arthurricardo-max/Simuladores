@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>Laboratório de Física - Menu</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            background-color: #121214;
+            color: white;
+            text-align: center;
+            padding: 50px;
+        }
+        h1 { color: #00ffcc; }
+        .menu-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+            margin-top: 30px;
+        }
+        /* Estilo dos botões do menu */
+        .botao-simulacao {
+            display: block;
+            width: 300px;
+            padding: 15px;
+            background-color: #202024;
+            color: white;
+            text-decoration: none; /* Remove o sublinhado do link */
+            border-radius: 8px;
+            border: 1px solid #323238;
+            font-size: 18px;
+            transition: 0.2s;
+        }
+        /* Efeito quando passa o mouse por cima */
+        .botao-simulacao:hover {
+            background-color: #00ffcc;
+            color: #121214;
+            transform: scale(1.05);
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Meu Laboratório de Física</h1>
+    <p>Selecione uma simulação abaixo para testar:</p>
+
+    <div class="menu-container">
+        <!-- Os links abaixo apontam para os outros arquivos na mesma pasta -->
+        <a href="simulacao1.html" class="botao-simulacao">1. Capacitor Simples</a>
+        <a href="simulacao2.html" class="botao-simulacao">2. Colisões</a>
+        <a href="simulacao3.html" class="botao-simulacao">3. Pêndulo Simples</a>
+        <a href="simulacao4.html" class="botao-simulacao">4. Condução Térmica</a>
+        <a href="simulacao5.html" class="botao-simulacao">5. Queda Livre</a>
+        <a href="simulacao6.html" class="botao-simulacao">6. Ondas</a>
+    </div>
+
+</body>
+</html>

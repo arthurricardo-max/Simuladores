@@ -1,0 +1,706 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simulador de Onda Otimizado - Duas Tabelas</title>
+    <!-- Chart.js para renderização de alta performance -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --bg-color: #F4F6F9;
+            --card-border: #CED4DA;
+            --primary-blue: #0056B3;
+            --primary-green: #1E4620;
+            --primary-red: #DC3545;
+            --text-dark: #212529;
+            --text-muted: #495057;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background-color: var(--bg-color);
+            margin: 0;
+            padding: 20px;
+            color: var(--text-dark);
+        }
+
+        .container {
+            max-width: 1450px;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        /* Parte Superior: Gráfico e Painel Lateral */
+        .topo-layout {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 20px;
+            height: 550px;
+        }
+
+        @media (max-width: 1024px) {
+            .topo-layout {
+                grid-template-columns: 1fr;
+                height: auto;
+            }
+        }
+
+        .painel {
+            background: white;
+            border: 1px solid var(--card-border);
+            border-radius: 8px;
+            padding: 15px;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .canvas-container {
+            position: relative;
+            flex-grow: 1;
+            width: 100%;
+            height: 100%;
+        }
+
+        /* Painel Lateral de Resultados */
+        .painel-resultados {
+            text-align: center;
+            overflow-y: auto;
+        }
+
+        .titulo-res {
+            font-weight: bold;
+            font-size: 15px;
+            color: var(--text-dark);
+            margin-bottom: 5px;
+        }
+
+        .resultado-num {
+            font-size: 36px;
+            font-weight: bold;
+            color: var(--primary-red);
+            margin-bottom: 5px;
+        }
+
+        .formula-valores {
+            font-size: 11px;
+            color: var(--primary-blue);
+            margin-bottom: 15px;
+        }
+
+        .titulo-tabela {
+            font-weight: bold;
+            font-size: 11px;
+            color: var(--text-muted);
+            margin-top: 5px;
+            text-align: left;
+            margin-bottom: 4px;
+        }
+
+        .tabela-container {
+            flex-grow: 1;
+            overflow-y: auto;
+            margin-bottom: 10px;
+            border: 1px solid #E0E0E0;
+            max-height: 160px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 11px;
+            text-align: left;
+        }
+
+        th {
+            background-color: #F1F1F1;
+            position: sticky;
+            top: 0;
+            padding: 6px;
+            border-bottom: 1px solid #E0E0E0;
+            color: black;
+        }
+
+        td {
+            padding: 6px;
+            border-bottom: 1px solid #E0E0E0;
+            background: #FAFAFA;
+            color: black;
+        }
+
+        /* Parte Inferior: Painéis de Controles */
+        .controles-layout {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 20px;
+        }
+
+        @media (max-width: 768px) {
+            .controles-layout {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .painel-onda {
+            background-color: #EBF3FC;
+            border: 1px solid #B4D3F8;
+            border-radius: 8px;
+            padding: 15px;
+        }
+
+        .painel-audio {
+            background-color: #EAF5EA;
+            border: 1px solid #BCD1BC;
+            border-radius: 8px;
+            padding: 15px;
+        }
+
+        .painel-ponto {
+            background-color: #FFFDE7;
+            border: 1px solid #E6DFB3;
+            border-radius: 8px;
+            padding: 15px;
+        }
+
+        .titulo-controle {
+            font-weight: bold;
+            font-size: 13px;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+
+        .grid-controles {
+            display: grid;
+            grid-template-columns: auto 1fr auto;
+            gap: 10px 15px;
+            align-items: center;
+        }
+
+        .grid-controles label {
+            font-size: 11px;
+            font-weight: bold;
+            color: var(--text-muted);
+        }
+
+        .grid-controles input[type="range"] {
+            width: 100%;
+            height: 20px;
+            margin: 0;
+        }
+
+        .grid-controles input[type="text"] {
+            width: 75px;
+            padding: 2px;
+            font-size: 11px;
+            border: 1px solid #CED4DA;
+            border-radius: 4px;
+            text-align: left;
+            background: white;
+            color: black;
+        }
+
+        .input-alvo-y {
+            background-color: #FFEBEE !important;
+            border: 1px solid #D32F2F !important;
+            color: black;
+        }
+
+        .btn-pause {
+            width: 100%;
+            padding: 6px;
+            border: none;
+            border-radius: 4px;
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 13px;
+            margin-bottom: 10px;
+            transition: background 0.2s;
+        }
+
+        .btn-pause.ativo {
+            background-color: #F8D7DA;
+            color: #842029;
+        }
+
+        .btn-pause.pausado {
+            background-color: #D1E7DD;
+            color: #0F5132;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <!-- Bloco Superior -->
+    <div class="topo-layout">
+        <!-- Gráfico Principal -->
+        <div class="painel">
+            <div class="canvas-container">
+                <canvas id="chartOnda"></canvas>
+            </div>
+        </div>
+
+        <!-- Painel Lateral de Resultados -->
+        <div class="painel painel-resultados">
+            <div class="titulo-res">Cálculo de y no Ponto Alvo</div>
+            <div id="lblResultadoNum" class="resultado-num">0.0000</div>
+            <div id="lblFormulaValores" class="formula-valores">Fórmula: y = 1.0 · sin(2.0·x - 0.0·t)</div>
+
+            <div class="titulo-tabela">Mapeamento Espacial (Tempo Fixo atual)</div>
+            <div class="tabela-container">
+                <table id="tabelaEspaco">
+                    <thead>
+                        <tr>
+                            <th>Interseção</th>
+                            <th>Posição (x)</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+
+            <div class="titulo-tabela">Mapeamento Temporal (No x do Slider)</div>
+            <div class="tabela-container">
+                <table id="tabelaTempo">
+                    <thead>
+                        <tr>
+                            <th>Ciclo Futuro</th>
+                            <th>Tempo (t)</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bloco Inferior (Controles) -->
+    <div class="controles-layout">
+        <!-- Painel 1: Controles da Onda -->
+        <div class="painel-onda">
+            <div class="titulo-controle" style="color: #0A58CA;">1. Controles da Onda</div>
+            <button id="btnPause" class="btn-pause ativo">⏸️ Pausar</button>
+            <div class="grid-controles">
+                <label>Amp (A)</label>
+                <input type="range" id="sldA" min="1" max="25" value="10">
+                <input type="text" id="txtA" value="1.00">
+
+                <label>N. Onda (k)</label>
+                <input type="range" id="sldK" min="5" max="50" value="20">
+                <input type="text" id="txtK" value="2.00">
+
+                <label>Fase (φ)</label>
+                <input type="range" id="sldPhi" min="0" max="63" value="0">
+                <input type="text" id="txtPhi" value="0.00">
+
+                <label>Tempo (t)</label>
+                <input type="range" id="sldT" min="0" max="200" value="0">
+                <input type="text" id="txtT" value="0.00">
+            </div>
+        </div>
+
+        <!-- Painel 2: Controles de Áudio -->
+        <div class="painel-audio">
+            <div class="titulo-controle" style="color: #1E4620;">2. Controles de Áudio</div>
+            <div class="grid-controles" style="margin-top: 35px;">
+                <label>Freq (Hz)</label>
+                <input type="range" id="sldF" min="0" max="100" value="61"> <!-- Próximo ao log de 440 -->
+                <input type="text" id="txtF" value="440">
+
+                <label>Volume</label>
+                <input type="range" id="sldVol" min="0" max="100" value="20">
+                <input type="text" id="txtVol" value="0.20">
+            </div>
+        </div>
+
+        <!-- Painel 3: Ponto de Medição -->
+        <div class="painel-ponto">
+            <div class="titulo-controle" style="color: #A18200;">3. Ponto de Medição</div>
+            <div class="grid-controles" style="margin-top: 35px;">
+                <label>Alvo (x)</label>
+                <input type="range" id="sldX" min="1" max="99" value="20">
+                <input type="text" id="txtX" value="2.00">
+
+                <label>Ir para Y alvo:</label>
+                <div style="grid-column: span 2; display: flex; align-items: center;">
+                    <input type="text" id="txtIrY" value="1.0" class="input-alvo-y">
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // --- Estado da Aplicação ---
+    let state = {
+        A: 1.0,
+        k: 2.0,
+        f_hz: 440.0,
+        phi: 0.0,
+        t_atual: 0.0,
+        x_alvo: 2.0,
+        vol: 0.2,
+        y_alvo_solicitado: 1.0,
+        animacao_ativa: true
+    };
+
+    const dt = 0.016; // ~60 FPS
+    let animationFrameId = null;
+    let chartInstance = null;
+
+    // Gerador de vetor X estático (0 a 10 com 600 pontos para suavidade)
+    const numPontosX = 600;
+    const x_vetor = Array.from({length: numPontosX}, (_, i) => (10 / (numPontosX - 1)) * i);
+
+    // --- Web Audio API (Substituindo o sounddevice) ---
+    let audioCtx = null;
+    let oscillator = null;
+    let gainNode = null;
+
+    function initAudio() {
+        if (audioCtx) return;
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        oscillator = audioCtx.createOscillator();
+        gainNode = audioCtx.createGain();
+
+        oscillator.type = 'sine';
+        oscillator.frequency.setValueAtTime(state.f_hz, audioCtx.currentTime);
+        gainNode.gain.setValueAtTime(state.animacao_ativa && state.f_hz >= 20 ? state.vol : 0, audioCtx.currentTime);
+
+        oscillator.connect(gainNode);
+        gainNode.connect(audioCtx.destination);
+        oscillator.start();
+    }
+
+    function updateAudioNode() {
+        if (!audioCtx) return;
+        oscillator.frequency.setValueAtTime(state.f_hz, audioCtx.currentTime);
+        if (state.animacao_ativa && state.f_hz >= 20) {
+            gainNode.gain.setValueAtTime(state.vol, audioCtx.currentTime);
+        } else {
+            gainNode.gain.setValueAtTime(0, audioCtx.currentTime);
+        }
+    }
+
+    // --- Mapeamento Logarítmico da Frequência ---
+    function obterFreqReal(valSlider) {
+        if (valSlider === 0) return 0.0;
+        return Math.pow(10, (valSlider / 100.0) * Math.log10(20000));
+    }
+
+    function obterValSliderF(freqReal) {
+        if (freqReal <= 0) return 0;
+        return Math.round((Math.log10(freqReal) / Math.log10(20000)) * 100);
+    }
+
+    // --- Inicialização do Gráfico ---
+    function initChart() {
+        const ctx = document.getElementById('chartOnda').getContext('2d');
+        chartInstance = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: x_vetor,
+                datasets: [
+                    {
+                        label: 'Onda',
+                        data: new Array(numPontosX).fill(0),
+                        borderColor: '#0056B3',
+                        borderWidth: 3,
+                        pointRadius: 0,
+                        fill: false
+                    },
+                    {
+                        label: 'Ponto Alvo',
+                        data: [],
+                        borderColor: '#DC3545',
+                        backgroundColor: '#DC3545',
+                        pointRadius: 6,
+                        pointHoverRadius: 6,
+                        showLine: false
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    x: {
+                        type: 'linear',
+                        min: 0,
+                        max: 10,
+                        title: { display: true, text: 'Posição (x)', color: '#495057' }
+                    },
+                    y: {
+                        min: -3,
+                        max: 3,
+                        title: { display: true, text: 'Deslocamento (y)', color: '#495057' }
+                    }
+                },
+                animation: false
+            }
+        });
+    }
+
+    // --- Atualização da Interface (Gráficos e Tabelas) ---
+    function atualizarInterface() {
+        const w_real = 2 * Math.PI * state.f_hz;
+        const w_visual = w_real > 0 ? Math.min(w_real / 12, state.k * 12) : 0;
+
+        // Calcular novos dados da onda
+        const y_novos = x_vetor.map(x => state.A * Math.sin(state.k * x - w_visual * state.t_atual + state.phi));
+        const y_ponto_visual = state.A * Math.sin(state.k * state.x_alvo - w_visual * state.t_atual + state.phi);
+
+        // Atualizar Gráfico
+        chartInstance.data.datasets[0].data = x_vetor.map((x, i) => ({x: x, y: y_novos[i]}));
+        chartInstance.data.datasets[1].data = [{x: state.x_alvo, y: y_ponto_visual}];
+        chartInstance.update('none');
+
+        // Textos informativos
+        document.getElementById('lblFormulaValores').innerText = `Fórmula: y = ${state.A.toFixed(1)} · sin(${state.k.toFixed(1)}·x - ${w_visual.toFixed(1)}·t)`;
+        document.getElementById('lblResultadoNum').innerText = y_ponto_visual.toFixed(4);
+
+        if (Math.abs(state.y_alvo_solicitado) > state.A) return;
+
+        // --- TABELA 1: MAPEAMENTO ESPACIAL ---
+        let x_encontrados = [];
+        const proximo_do_pico = Math.abs(state.y_alvo_solicitado - state.A) < 0.05;
+        const proximo_do_vale = Math.abs(state.y_alvo_solicitado + state.A) < 0.05;
+
+        if (proximo_do_pico || proximo_do_vale) {
+            for (let i = 1; i < numPontosX - 1; i++) {
+                let y_ant = y_novos[i - 1], y_at = y_novos[i], y_prox = y_novos[i + 1];
+                if (proximo_do_pico && (y_at > y_ant && y_at > y_prox)) {
+                    let x_intersecao = x_vetor[i];
+                    if (x_encontrados.length === 0 || (x_intersecao - x_encontrados[x_encontrados.length - 1] > 0.4)) {
+                        x_encontrados.push(x_intersecao);
+                    }
+                } else if (proximo_do_vale && (y_at < y_ant && y_at < y_prox)) {
+                    let x_intersecao = x_vetor[i];
+                    if (x_encontrados.length === 0 || (x_intersecao - x_encontrados[x_encontrados.length - 1] > 0.4)) {
+                        x_encontrados.push(x_intersecao);
+                    }
+                }
+            }
+        } else {
+            for (let i = 0; i < numPontosX - 1; i++) {
+                let y_at = y_novos[i], y_px = y_novos[i + 1];
+                if ((y_at <= state.y_alvo_solicitado && state.y_alvo_solicitado <= y_px) || (y_at >= state.y_alvo_solicitado && state.y_alvo_solicitado >= y_px)) {
+                    let x_intersecao = x_vetor[i];
+                    if (x_encontrados.length === 0 || (x_intersecao - x_encontrados[x_encontrados.length - 1] > 0.3)) {
+                        x_encontrados.push(x_intersecao);
+                    }
+                }
+            }
+        }
+
+        const tbodyEspaco = document.querySelector('#tabelaEspaco tbody');
+        tbodyEspaco.innerHTML = '';
+        for (let idx = 0; idx < 4; idx++) {
+            let valX = idx < x_encontrados.length ? `x = ${x_encontrados[idx].toFixed(2)}` : '---';
+            tbodyEspaco.innerHTML += `<tr><td>Ponto ${idx + 1}</td><td>${valX}</td></tr>`;
+        }
+
+        // --- TABELA 2: MAPEAMENTO TEMPORAL ---
+        let tempos_futuros = [];
+        if (w_visual > 0) {
+            const periodo_t = (2 * Math.PI) / w_visual;
+            const proporcao = Math.max(-1.0, Math.min(1.0, state.y_alvo_solicitado / state.A));
+            const angulo_base = Math.asin(proporcao);
+
+            let t_base1 = (state.k * state.x_alvo + state.phi - angulo_base) / w_visual;
+            let t_base2 = (state.k * state.x_alvo + state.phi - (Math.PI - angulo_base)) / w_visual;
+
+            let todos_os_tempos = [];
+            let t_temp = ((t_base1 % periodo_t) + periodo_t) % periodo_t;
+            while (t_temp < 20.0) {
+                if (t_temp >= 0.0 && t_temp <= 20.0) todos_os_tempos.push(t_temp);
+                t_temp += periodo_t;
+            }
+
+            if (!proximo_do_pico && !proximo_do_vale) {
+                t_temp = ((t_base2 % periodo_t) + periodo_t) % periodo_t;
+                while (t_temp < 20.0) {
+                    if (t_temp >= 0.0 && t_temp <= 20.0) todos_os_tempos.push(t_temp);
+                    t_temp += periodo_t;
+                }
+            }
+
+            // Filtrar duplicados e ordenar
+            todos_os_tempos = [...new Set(todos_os_tempos.map(t => parseFloat(t.toFixed(4))))].sort((a, b) => a - b);
+            let proximos = todos_os_tempos.filter(t => t >= state.t_atual);
+
+            if (proximos.length < 5) {
+                proximos = proximos.concat(todos_os_tempos.filter(t => t < state.t_atual));
+            }
+            tempos_futuros = proximos.slice(0, 5);
+        }
+
+        if (tempos_futuros.length === 0) tempos_futuros = new Array(5).fill(0.0);
+
+        const tbodyTempo = document.querySelector('#tabelaTempo tbody');
+        tbodyTempo.innerHTML = '';
+        for (let idx = 0; idx < 4; idx++) {
+            let valT = w_visual > 0 && idx < tempos_futuros.length ? `t = ${tempos_futuros[idx].toFixed(2)} s` : '---';
+            tbodyTempo.innerHTML += `<tr><td>Repetição ${idx + 1}</td><td>${valT}</td></tr>`;
+        }
+    }
+
+    // --- Loop Principal de Animação (Fixo a ~60fps) ---
+    function rodarFrame() {
+        if (state.animacao_ativa) {
+            state.t_atual += dt;
+            if (state.t_atual > 20.0) state.t_atual = 0.0;
+
+            document.getElementById('sldT').value = Math.round(state.t_atual * 10);
+            if (document.activeElement !== document.getElementById('txtT')) {
+                document.getElementById('txtT').value = state.t_atual.toFixed(2);
+            }
+            atualizarInterface();
+        }
+        animationFrameId = requestAnimationFrame(rodarFrame);
+    }
+
+    // --- Gerenciadores de Botão e Eventos ---
+    function togglePause() {
+        state.animacao_ativa = !state.animacao_active; // Evitar falhas de gatilho
+        const btn = document.getElementById('btnPause');
+        state.animacao_ativa = btn.classList.contains('pausado');
+
+        if (state.animacao_ativa) {
+            btn.innerText = "⏸️ Pausar";
+            btn.className = "btn-pause ativo";
+        } else {
+            btn.innerText = "▶️ Play";
+            btn.className = "btn-pause pausado";
+        }
+        updateAudioNode();
+        atualizarInterface();
+    }
+
+    function calcularEIrParaY() {
+        let y_alvo = parseFloat(document.getElementById('txtIrY').value.replace(',', '.'));
+        if (isNaN(y_alvo)) return;
+
+        if (Math.abs(y_alvo) > state.A) {
+            document.getElementById('txtIrY').value = `Max: ±${state.A.toFixed(1)}`;
+            return;
+        }
+
+        state.y_alvo_solicitado = y_alvo;
+
+        // Se estiver rodando, força pausa automática
+        if (state.animacao_ativa) {
+            togglePause();
+        }
+
+        const w_real = 2 * Math.PI * state.f_hz;
+        const w_visual = w_real > 0 ? Math.min(w_real / 12, state.k * 12) : 0;
+
+        if (w_visual === 0) {
+            atualizarInterface();
+            return;
+        }
+
+        const proporcao = Math.max(-1.0, Math.min(1.0, y_alvo / state.A));
+        const angulo_base = Math.asin(proporcao);
+        let t_calculado = (state.k * state.x_alvo + state.phi - angulo_base) / w_visual;
+
+        const periodo_visual = (2 * Math.PI) / w_visual;
+        while (t_calculado < 0) t_calculado += periodo_visual;
+        while (t_calculado > 20.0) {
+            t_calculado -= periodo_visual;
+            if (t_calculado < 0) {
+                t_calculado = 0.0;
+                break;
+            }
+        }
+
+        state.t_atual = t_calculado;
+        document.getElementById('sldT').value = Math.round(state.t_atual * 10);
+        document.getElementById('txtT').value = state.t_atual.toFixed(2);
+
+        atualizarInterface();
+    }
+
+    // --- Sincronização dos Inputs Sliders/Textos ---
+    function setupEventos() {
+        // Inicialização com clique para política de áudio dos navegadores modernos
+        document.body.addEventListener('click', () => { initAudio(); }, { once: true });
+
+        const sldA = document.getElementById('sldA'), txtA = document.getElementById('txtA');
+        const sldK = document.getElementById('sldK'), txtK = document.getElementById('txtK');
+        const sldPhi = document.getElementById('sldPhi'), txtPhi = document.getElementById('txtPhi');
+        const sldT = document.getElementById('sldT'), txtT = document.getElementById('txtT');
+        const sldF = document.getElementById('sldF'), txtF = document.getElementById('txtF');
+        const sldVol = document.getElementById('sldVol'), txtVol = document.getElementById('txtVol');
+        const sldX = document.getElementById('sldX'), txtX = document.getElementById('txtX');
+
+        // Sliders -> Estado
+        sldA.addEventListener('input', (e) => { state.A = e.target.value / 10; txtA.value = state.A.toFixed(2); atualizarInterface(); });
+        sldK.addEventListener('input', (e) => { state.k = e.target.value / 10; txtK.value = state.k.toFixed(2); atualizarInterface(); });
+        sldPhi.addEventListener('input', (e) => { state.phi = e.target.value / 10; txtPhi.value = state.phi.toFixed(2); atualizarInterface(); });
+        sldT.addEventListener('input', (e) => { state.t_atual = e.target.value / 10; txtT.value = state.t_atual.toFixed(2); atualizarInterface(); });
+        sldVol.addEventListener('input', (e) => { state.vol = e.target.value / 100; txtVol.value = state.vol.toFixed(2); updateAudioNode(); });
+        sldX.addEventListener('input', (e) => { state.x_alvo = e.target.value / 10; txtX.value = state.x_alvo.toFixed(2); atualizarInterface(); });
+        
+        sldF.addEventListener('input', (e) => { 
+            state.f_hz = obterFreqReal(parseInt(e.target.value)); 
+            txtF.value = Math.round(state.f_hz); 
+            updateAudioNode();
+            atualizarInterface(); 
+        });
+
+        // Eventos Enter nos inputs Manuais
+        const vincularEnter = (txtNode, sldNode, prop, mult, isAudio, isFreq) => {
+            txtNode.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    let val = parseFloat(txtNode.value.replace(',', '.'));
+                    if (!isNaN(val)) {
+                        if (isFreq) {
+                            if (val >= 0 && val <= 20000) {
+                                state.f_hz = val;
+                                sldNode.value = obterValSliderF(val);
+                            }
+                        } else {
+                            state[prop] = val;
+                            sldNode.value = Math.round(val * mult);
+                        }
+                        if (isAudio) updateAudioNode();
+                        atualizarInterface();
+                    }
+                }
+            });
+        };
+
+        vincularEnter(txtA, sldA, 'A', 10, false, false);
+        vincularEnter(txtK, sldK, 'k', 10, false, false);
+        vincularEnter(txtPhi, sldPhi, 'phi', 10, false, false);
+        vincularEnter(txtT, sldT, 't_atual', 10, false, false);
+        vincularEnter(txtVol, sldVol, 'vol', 100, true, false);
+        vincularEnter(txtX, sldX, 'x_alvo', 10, false, false);
+        vincularEnter(txtF, sldF, 'f_hz', 1, true, true);
+
+        document.getElementById('txtIrY').addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') calcularEIrParaY();
+        });
+
+        document.getElementById('btnPause').addEventListener('click', togglePause);
+    }
+
+    // --- Inicialização Geral ---
+    window.onload = function() {
+        initChart();
+        setupEventos();
+        // Inicializa a frequência do Slider para sincronizar com os 440Hz iniciais
+        document.getElementById('sldF').value = obterValSliderF(state.f_hz);
+        atualizarInterface();
+        rodarFrame();
+    };
+</script>
+
+</body>
+</html>

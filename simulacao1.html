@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>IA Electronics Discovery: Simulação Física de Circuito RC</title>
+    <!-- Carrega a biblioteca gráfica Chart.js (equivalente ao pyqtgraph) -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --bg-color: #F8F9FA;
+            --panel-bg: #FFFFFF;
+            --border-color: #CED4DA;
+            --text-dark: #2C3E50;
+            --primary-blue: #3498DB;
+            --success-green: #27AE60;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: black;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            height: 95vh;
+            box-sizing: border-box;
+        }
+
+        header {
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .voltar-menu {
+            color: var(--primary-blue);
+            text-decoration: none;
+            font-weight: bold;
+        }
+
+        /* Layout em Grade do Painel Superior */
+        .layout-topo {
+            display: grid;
+            grid-template-columns: 11fr 22fr 13fr;
+            gap: 15px;
+            flex: 3;
+            min-height: 0; /* Permite encolhimento correto em flex containers */
+        }
+
+        .painel {
+            background-color: var(--panel-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 12px;
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
+        }
+
+        .titulo-painel {
+            font-weight: bold;
+            font-size: 13px;
+            color: #495057;
+            margin-bottom: 8px;
+            text-align: center;
+        }
+
+        /* Painel 1: Circuito */
+        #cenario-circuito {
+            background-color: white;
+            border: 1px solid #DCDCDC;
+            border-radius: 6px;
+            width: 100%;
+            height: 300px;
+            box-sizing: border-box;
+        }
+
+        /* Painel 2: Gráfico */
+        .wrapper-grafico {
+            flex: 1;
+            position: relative;
+            width: 100%;
+            height: 100%;
+        }
+
+        /* Painel 3: Dedução Teórica */
+        .resultado-tau {
+            font-size: 13px;
+            font-weight: bold;
+            color: var(--primary-blue);
+            text-align: center;
+            margin-bottom: 8px;
+        }
+
+        .frame-equacao {
+            background-color: var(--bg-color);
+            border: 1px dashed var(--success-green);
+            border-radius: 6px;
+            padding: 8px;
+            margin-bottom: 8px;
+            font-size: 12px;
+        }
+
+        .eq-tit { color: var(--success-green); font-weight: bold; margin-bottom: 4px; }
+        .eq-cor { color: var(--text-dark); text-align: center; }
+
+        .wrapper-tabela {
+            flex: 1;
+            overflow-y: auto;
+            border: 1px solid #E0E0E0;
+            border-radius: 4px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 11px;
+            background-color: #FAFAFA;
+        }
+
+        th, td {
+            border: 1px solid #E0E0E0;
+            padding: 6px;
+            text-align: left;
+        }
+
+        th { background-color: #EDEDED; font-weight: bold;}
+
+        /* Seção de Controles Inferiores */
+        .layout-controles {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            flex: 1;
+            margin-top: 15px;
+        }
+
+        .frame-controle {
+            border-radius: 8px;
+            padding: 10px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .ctrl-p1 { background-color: #EBF3FC; border: 1px solid #B4D3F8; }
+        .ctrl-p2 { background-color: #EAF5EA; border: 1px solid #BCD1BC; }
+        
+        .ctrl-tit { font-weight: bold; font-size: 12px; text-align: center; margin-bottom: 8px;}
+        .ctrl-p1 .ctrl-tit { color: #0A58CA; }
+        .ctrl-p2 .ctrl-tit { color: #1E4620; }
+
+        .grid-controles {
+            display: grid;
+            grid-template-columns: 140px 1fr 75px;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .grid-controles label { font-size: 11px; font-weight: bold; color: #495057; }
+        .grid-controles input[type="range"] { height: 18px; width: 100%; margin: 0; }
+        .grid-controles input[type="text"] { 
+            width: 75px; background-color: white; border: 1px solid #CED4DA; 
+            border-radius: 4px; padding: 2px; font-size: 11px; box-sizing: border-box;
+        }
+
+        .btn-pause {
+            width: 100%; padding: 6px; font-weight: bold; border-radius: 4px; 
+            border: none; cursor: pointer; font-size: 12px; margin-bottom: 8px;
+            transition: 0.1s;
+        }
+        .btn-pause.pausado { background-color: #D1E7DD; color: #0F5132; }
+        .btn-pause.ativo { background-color: #F8D7DA; color: #842029; }
+    </style>
+</head>
+<body>
+
+    <header>
+        <a href="index.html" class="voltar-menu">← Voltar para o Menu</a>
+        <h3 style="margin:0; font-size:16px;">IA Electronics Discovery</h3>
+    </header>
+
+    <div class="layout-topo">
+        <!-- 1. Painel Esquerdo: Circuito -->
+        <div class="painel">
+            <div class="titulo-painel">Visualização Física do Fluxo de Cargas (CC)</div>
+            <canvas id="cenario-circuito" width="420" height="280"></canvas>
+        </div>
+
+        <!-- 2. Painel Central: Gráfico -->
+        <div class="painel">
+            <div class="wrapper-grafico">
+                <canvas id="plot-grafico"></canvas>
+            </div>
+        </div>
+
+        <!-- 3. Painel Direito: Resumos Matemáticos -->
+        <div class="painel">
+            <div class="titulo-painel" style="color: var(--text-dark); font-size: 14px;">Dedução Teórica do Circuito</div>
+            <div id="lbl-tau-resultado" class="resultado-tau"></div>
+            
+            <div class="frame-equacao">
+                <div id="lbl-eq-tit" class="eq-tit"></div>
+                <div class="eq-cor" style="font-size:11px; margin-bottom:4px;">Fórmula Base: <i>V<sub>C</sub></i>(<i>t</i>) = <i>V<sub>s</sub></i> · (1 − <i>e</i><sup>−<i>t</i>/τ</sup>)</div>
+                <div id="lbl-eq-substituida" class="eq-cor" style="font-size:11px; color:#555;"></div>
+            </div>
+
+            <div class="titulo-painel" style="font-size:11px; margin-top:5px; text-align:left;">Constantes de Tempo Fracionárias</div>
+            <div class="wrapper-tabela">
+                <table id="tabela-dados">
+                    <thead>
+                        <tr>
+                            <th>Instante de Tempo</th>
+                            <th>Tensão Instantânea V_c</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Linhas geradas via JavaScript -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Seção de Controles Inferiores -->
+    <div class="layout-controles">
+        <div class="frame-controle ctrl-p1">
+            <div class="ctrl-tit">1. Ajuste dos Componentes</div>
+            <div class="grid-controles">
+                <label>Resistência R (Ω)</label>
+                <input type="range" id="sld_r" min="100" max="5000" value="1000">
+                <input type="text" id="txt_r" value="1000">
+
+                <label>Capacitância C (µF)</label>
+                <input type="range" id="sld_c" min="10" max="500" value="100">
+                <input type="text" id="txt_c" value="100.0">
+            </div>
+        </div>
+
+        <div class="frame-controle ctrl-p2">
+            <div class="ctrl-tit">2. Varredura Temporal</div>
+            <button id="btn-pause" class="btn-pause ativo">⏸️ Pausar</button>
+            <div class="grid-controles">
+                <label>Tempo Corrente t (s)</label>
+                <input type="range" id="sld_t" min="0" max="2000" value="0">
+                <input type="text" id="txt_t" value="0.00">
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- Constantes Estáveis ---
+        const V_FONTE = 5.0;
+        const DT = 0.016;
+        const FATOR_SLOW_MOTION = 0.15;
+
+        // --- Estado do Simulador ---
+        let r = 1000.0;
+        let c = 0.0001; // 100 µF
+        let t_atual = 0.0;
+        let tau = r * c;
+        let animacao_ativa = true;
+        let fase_eletron = 0.0;
+
+        // Elementos do DOM
+        const canvasCircuito = document.getElementById('cenario-circuito');
+        const ctxCircuito = canvasCircuito.getContext('2d');
+        const sldR = document.getElementById('sld_r');
+        const txtR = document.getElementById('txt_r');
+        const sldC = document.getElementById('sld_c');
+        const txtC = document.getElementById('txt_c');
+        const sldT = document.getElementById('sld_t');
+        const txtT = document.getElementById('txt_t');
+        const btnPause = document.getElementById('btn-pause');
+
+        // Caminho físico dos elétrons no circuito
+        const caminho = [
+            {x: 40, y: 40},   // Canto Sup Esq
+            {x: 380, y: 40},  // Canto Sup Dir
+            {x: 380, y: 240}, // Canto Inf Dir
+            {x: 225, y: 240}, // Entrada Placa (-)
+            {x: 195, y: 240}, // Saída Placa (+)
+            {x: 40, y: 240}   // Canto Inf Esq
+        ];
+
+        // --- Inicialização do Gráfico (Chart.js substituindo PyQtGraph) ---
+        const ctxGrafico = document.getElementById('plot-grafico').getContext('2d');
+        const grafico = new Chart(ctxGrafico, {
+            type: 'line',
+            data: {
+                datasets: [
+                    {
+                        label: 'Curva de Carga',
+                        data: [],
+                        borderColor: '#2ECC71',
+                        borderWidth: 3,
+                        pointRadius: 0,
+                        fill: false,
+                        tension: 0.1
+                    },
+                    {
+                        label: 'Marcador Tempo',
+                        data: [],
+                        borderColor: '#3498DB',
+                        borderWidth: 1.5,
+                        borderDash: [5, 5],
+                        pointRadius: 0,
+                        fill: false
+                    },
+                    {
+                        label: 'Ponto Atual',
+                        data: [],
+                        borderColor: '#E74C3C',
+                        backgroundColor: '#E74C3C',
+                        pointRadius: 6,
+                        pointHoverRadius: 6,
+                        showLine: false
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                animation: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    x: {
+                        type: 'linear',
+                        title: { display: true, text: 'Tempo t (s)', color: '#495057' },
+                        grid: { color: 'rgba(0,0,0,0.05)' }
+                    },
+                    y: {
+                        type: 'linear',
+                        min: -0.1,
+                        max: V_FONTE + 0.2,
+                        title: { display: true, text: 'Tensão Potencial V_c (V)', color: '#495057' },
+                        grid: { color: 'rgba(0,0,0,0.05)' }
+                    }
+                }
+            }
+        });
+
+        // --- Funções de Renderização do Circuito (Substituindo o paintEvent) ---
+        function desenharCircuito(v_c, i_norm) {
+            ctxCircuito.clearRect(0, 0, canvasCircuito.width, canvasCircuito.height);
+            
+            // 1. Desenhar Fios
+            ctxCircuito.strokeStyle = "#7F8C8D";
+            ctxCircuito.lineWidth = 2;
+            
+            ctxCircuito.beginPath();
+            ctxCircuito.moveTo(caminho[0].x, caminho[0].y); ctxCircuito.lineTo(175, 40);
+            ctxCircuito.moveTo(245, 40); ctxCircuito.lineTo(caminho[1].x, caminho[1].y);
+            ctxCircuito.lineTo(caminho[2].x, caminho[2].y);
+            ctxCircuito.lineTo(caminho[3].x, caminho[3].y);
+            ctxCircuito.moveTo(caminho[4].x, caminho[4].y);
+            ctxCircuito.lineTo(caminho[5].x, caminho[5].y);
+            ctxCircuito.lineTo(40, 160);
+            ctxCircuito.moveTo(40, 120); ctxCircuito.lineTo(caminho[0].x, caminho[0].y);
+            ctxCircuito.stroke();
+
+            // 2. Fonte CC
+            ctxCircuito.lineWidth = 3;
+            ctxCircuito.beginPath(); ctxCircuito.moveTo(25, 120); ctxCircuito.lineTo(55, 120); ctxCircuito.stroke(); // Polo (+)
+            ctxCircuito.lineWidth = 1.5;
+            ctxCircuito.beginPath(); ctxCircuito.moveTo(32, 160); ctxCircuito.lineTo(48, 160); ctxCircuito.stroke(); // Polo (-)
+            
+            ctxCircuito.fillStyle = "black";
+            ctxCircuito.font = "bold 11px Arial";
+            ctxCircuito.fillText(`${V_FONTE.toFixed(1)} V`, 62, 144);
+
+            // Resistor em Zigue-zague
+            ctxCircuito.strokeStyle = "#E67E22";
+            ctxCircuito.lineWidth = 2;
+            const pontosR = [
+                {x: 175, y: 40}, {x: 180, y: 25}, {x: 192, y: 55},
+                {x: 204, y: 25}, {x: 216, y: 55}, {x: 228, y: 25},
+                {x: 240, y: 55}, {x: 245, y: 40}
+            ];
+            ctxCircuito.beginPath();
+            ctxCircuito.moveTo(pontosR[0].x, pontosR[0].y);
+            for(let i=1; i<pontosR.length; i++) ctxCircuito.lineTo(pontosR[i].x, pontosR[i].y);
+            ctxCircuito.stroke();
+            ctxCircuito.fillStyle = "black"; ctxCircuito.font = "bold 12px Arial"; ctxCircuito.fillText("R", 206, 18);
+
+            // Capacitor de Placas Paralelas
+            let fator_cheio = Math.min(1.0, v_c / V_FONTE);
+            let vermelho = Math.floor(127 + (231 - 127) * fator_cheio);
+            
+            // Placa Esquerda (+)
+            ctxCircuito.strokeStyle = `rgb(${vermelho}, 76, 60)`;
+            ctxCircuito.lineWidth = 5; ctxCircuito.lineCap = "round";
+            ctxCircuito.beginPath(); ctxCircuito.moveTo(195, 210); ctxCircuito.lineTo(195, 270); ctxCircuito.stroke();
+
+            // Placa Direita (-)
+            ctxCircuito.strokeStyle = "#2C3E50";
+            ctxCircuito.beginPath(); ctxCircuito.moveTo(225, 210); ctxCircuito.lineTo(225, 270); ctxCircuito.stroke();
+
+            // Campo Elétrico e Sinais (+ / -)
+            if (fator_cheio > 0.02) {
+                let num_cargas = Math.floor(fator_cheio * 5) + 1;
+                ctxCircuito.font = "bold 11px Arial";
+                let passo_y = num_cargas > 0 ? 54 / (num_cargas + 1) : 0;
+                
+                for(let i=1; i<=num_cargas; i++) {
+                    let y_pos = 208 + i * passo_y;
+                    ctxCircuito.fillStyle = "#E74C3C"; ctxCircuito.fillText("+", 182, y_pos + 4);
+                    ctxCircuito.fillStyle = "#2C3E50"; ctxCircuito.fillText("-", 233, y_pos + 4);
+
+                    // Linhas de campo
+                    ctxCircuito.strokeStyle = `rgba(241, 196, 15, ${fator_cheio})`;
+                    ctxCircuito.lineWidth = 1.5;
+                    ctxCircuito.beginPath(); ctxCircuito.moveTo(198, y_pos); ctxCircuito.lineTo(222, y_pos); ctxCircuito.stroke();
+                    // Setas do campo
+                    ctxCircuito.beginPath(); ctxCircuito.moveTo(222, y_pos); ctxCircuito.lineTo(218, y_pos - 3);
+                    ctxCircuito.moveTo(222, y_pos); ctxCircuito.lineTo(218, y_pos + 3); ctxCircuito.stroke();
+                }
+            }
+
+            // Fluxo de Elétrons
+            if (i_norm > 0.01) {
+                fase_eletron = (fase_eletron + i_norm * 0.03) % 1.0;
+                ctxCircuito.fillStyle = "#3498DB";
+                let num_eletrons = 12;
+
+                for (let i = 0; i < num_eletrons; i++) {
+                    let pos_relativa = (fase_eletron + (i / num_eletrons)) % 1.0;
+                    let x, y;
+
+                    if (pos_relativa < 0.30) {
+                        x = 40 + (pos_relativa / 0.30) * 340; y = 40;
+                    } else if (pos_relativa < 0.50) {
+                        x = 380; y = 40 + ((pos_relativa - 0.30) / 0.20) * 200;
+                    } else if (pos_relativa < 0.80) {
+                        x = 380 - ((pos_relativa - 0.50) / 0.30) * 340; y = 240;
+                    } else {
+                        x = 40; y = 240 - ((pos_relativa - 0.80) / 0.20) * 200;
+                    }
+                    ctxCircuito.beginPath(); ctxCircuito.arc(x, y, 4.5, 0, Math.PI * 2); ctxCircuito.fill();
+                }
+            }
+
+            // Label de potencial de fundo
+            ctxCircuito.fillStyle = "black"; ctxCircuito.font = "bold 11px Arial";
+            ctxCircuito.textAlign = "center";
+            ctxCircuito.fillText(`Potencial V_c: ${v_c.toFixed(2)} V`, canvasCircuito.width/2, canvasCircuito.height - 10);
+            ctxCircuito.textAlign = "left"; // Reset
+        }
+
+        // --- Lógica Física e Atualização de Interface ---
+        function atualizarInterface() {
+            let exponencial = tau > 0 ? Math.exp(-t_atual / tau) : 0;
+            let v_c_atual = V_FONTE * (1.0 - exponencial);
+            let i_normalizada = exponencial;
+
+            desenharCircuito(v_c_atual, i_normalizada);
+
+            // Geração de Vetores Dinâmicos (Substituindo o numpy.linspace)
+            let t_limite = tau > 0 ? 5.0 * tau : 1.0;
+            let pontosCurva = [];
+            for (let i = 0; i <= 100; i++) {
+                let t_ponto = (i / 100) * t_limite;
+                let v_ponto = tau > 0 ? V_FONTE * (1.0 - Math.exp(-t_ponto / tau)) : V_FONTE;
+                pontosCurva.push({x: t_ponto, y: v_ponto});
+            }
+
+            // Atualiza Dados do Gráfico
+            grafico.data.datasets[0].data = pontosCurva;
+            grafico.data.datasets[1].data = [{x: t_atual, y: -0.2}, {x: t_atual, y: V_FONTE + 0.2}];
+            grafico.data.datasets[2].data = [{x: t_atual, y: v_c_atual}];
+            grafico.options.scales.x.max = t_limite;
+            grafico.update();
+
+            // Atualiza Textos e Deduções Teóricas
+            document.getElementById('lbl-tau-resultado').innerHTML = `
+                τ = R · C = ${(tau * 1000).toFixed(1)} ms &nbsp;|&nbsp; Carga Completa (5τ): <b>${(5 * tau).toFixed(3)} s</b>
+            `;
+            document.getElementById('lbl-eq-tit').innerHTML = `<b>Cálculo Teórico Instantâneo (t = ${t_atual.toFixed(2)} s):</b>`;
+            document.getElementById('lbl-eq-substituida').innerHTML = `
+                Cálculo: <i>V<sub>C</sub></i> = ${V_FONTE.toFixed(1)} · (1 − <i>e</i><sup>−${t_atual.toFixed(2)}/${tau.toFixed(4)}</sup>) = <b>${v_c_atual.toFixed(2)} V</b>
+            `;
+
+            // Alimentação Discreta da Tabela
+            const tbody = document.querySelector('#tabela-dados tbody');
+            tbody.innerHTML = '';
+            for (let i = 0; i < 10; i++) {
+                let fracao_tau = (i + 1) * 0.5;
+                let tempo_ponto = fracao_tau * tau;
+                let v_ponto = tau > 0 ? V_FONTE * (1.0 - Math.exp(-tempo_ponto / tau)) : V_FONTE;
+
+                let row = `<tr>
+                    <td>${fracao_tau.toFixed(1)} τ (${(tempo_ponto * 1000).toFixed(1)} ms)</td>
+                    <td>${v_ponto.toFixed(3)} V (${((v_ponto / V_FONTE) * 100).toFixed(1)}%)</td>
+                </tr>`;
+                tbody.innerHTML += row;
+            }
+        }
+
+        // --- Engine Clock (Loop principal de animação) ---
+        function loopFrame() {
+            if (animacao_ativa) {
+                let t_max_circuito = 5 * tau;
+                if (t_atual >= t_max_circuito) {
+                    t_atual = 0.0;
+                }
+                t_atual += (DT * FATOR_SLOW_MOTION);
+
+                // Sincroniza Sliders sem disparar loops infinitos de eventos
+                sldT.value = Math.floor(t_atual * 100);
+                txtT.value = t_atual.toFixed(2);
+
+                atualizarInterface();
+            }
+            requestAnimationFrame(loopFrame);
+        }
+
+        // --- Sincronização de Eventos e Inputs ---
+        sldR.addEventListener('input', (e) => {
+            r = parseFloat(e.target.value);
+            txtR.value = r;
+            tau = r * c;
+            atualizarInterface();
+        });
+        txtR.addEventListener('change', (e) => {
+            let val = Math.max(100, Math.min(5000, parseFloat(e.target.value) || 1000));
+            r = val; sldR.value = val; txtR.value = val;
+            tau = r * c; atualizarInterface();
+        });
+
+        sldC.addEventListener('input', (e) => {
+            let uF = parseFloat(e.target.value);
+            c = uF / 1000000.0;
+            txtC.value = uF.toFixed(1);
+            tau = r * c;
+            atualizarInterface();
+        });
+        txtC.addEventListener('change', (e) => {
+            let uF = Math.max(10, Math.min(500, parseFloat(e.target.value) || 100));
+            c = uF / 1000000.0; sldC.value = uF; txtC.value = uF.toFixed(1);
+            tau = r * c; atualizarInterface();
+        });
+
+        sldT.addEventListener('input', (e) => {
+            t_atual = parseFloat(e.target.value) / 100.0;
+            txtT.value = t_atual.toFixed(2);
+            atualizarInterface();
+        });
+        txtT.addEventListener('change', (e) => {
+            t_atual = Math.max(0, parseFloat(e.target.value) || 0);
+            sldT.max = Math.max(2000, Math.floor(t_atual * 100) + 100);
+            sldT.value = Math.floor(t_atual * 100);
+            atualizarInterface();
+        });
+
+        btnPause.addEventListener('click', () => {
+            animacao_ativa = !animacao_ativa;
+            if (animacao_ativa) {
+                btnPause.textContent = "⏸️ Pausar";
+                btnPause.className = "btn-pause ativo";
+            } else {
+                btnPause.textContent = "▶️ Play";
+                btnPause.className = "btn-pause pausado";
+            }
+        });
+
+        // Início imediato da aplicação
+        atualizarInterface();
+        requestAnimationFrame(loopFrame);
+    </script>
+</body>
+</html>

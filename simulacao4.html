@@ -1,0 +1,556 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IA Physics Discovery: Condução Térmica</title>
+    <!-- Chart.js para o Gráfico Macroscópico -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --bg-color: #F8F9FA;
+            --card-bg: #FFFFFF;
+            --primary-blue: #3498DB;
+            --primary-red: #E74C3C;
+            --dark-blue: #2C3E50;
+            --border-color: #CED4DA;
+            --text-dark: #212529;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-dark);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            box-sizing: border-box;
+            min-height: 100vh;
+        }
+
+        .row-top {
+            display: grid;
+            grid-template-columns: 1.2fr 1.3fr 1fr;
+            gap: 20px;
+            min-height: 480px;
+        }
+
+        @media (max-width: 1200px) {
+            .row-top {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .panel {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        .panel-title {
+            font-weight: bold;
+            color: var(--dark-blue);
+            text-align: center;
+            margin-bottom: 15px;
+            font-size: 14px;
+        }
+
+        /* Painel Microscópico (Canvas) */
+        #canvasAtomos {
+            background-color: #FFFFFF;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            width: 100%;
+            height: 100%;
+            min-height: 300px;
+        }
+
+        /* Gráfico */
+        .chart-container {
+            position: relative;
+            flex-grow: 1;
+            height: 100%;
+            min-height: 300px;
+        }
+
+        /* Monitor de Difusão */
+        #cronometro {
+            font-size: 18px;
+            font-weight: bold;
+            color: #2ECC71;
+            text-align: center;
+            margin-bottom: 10px;
+        }
+
+        .frame-equacao {
+            background-color: #F8F9FA;
+            border: 1px dashed #0D6EFD;
+            border-radius: 6px;
+            padding: 8px;
+            margin-bottom: 10px;
+        }
+
+        .eq-tit { font-size: 11px; color: #0D6EFD; margin-bottom: 5px; }
+        .eq-style { font-size: 13px; color: var(--dark-blue); text-align: center; margin: 8px 0; }
+        .eq-sub { font-size: 11px; color: #555; text-align: center; margin-bottom: 5px; }
+        .eq-resp { font-size: 14px; font-weight: bold; color: var(--primary-red); text-align: center; }
+
+        /* Tabela */
+        .table-wrapper {
+            flex-grow: 1;
+            overflow-y: auto;
+            max-height: 180px;
+            border: 1px solid #E0E0E0;
+            border-radius: 4px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 11px;
+            background: #FAFAFA;
+        }
+
+        th, td {
+            padding: 6px;
+            text-align: center;
+            border-bottom: 1px solid #E0E0E0;
+        }
+
+        th {
+            background-color: #ECEFF1;
+            position: sticky;
+            top: 0;
+            color: #495057;
+        }
+
+        /* Controles Inferiores */
+        .row-bottom {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 20px;
+        }
+
+        @media (max-width: 768px) {
+            .row-bottom { grid-template-columns: 1fr; }
+        }
+
+        .panel-ctrl-1 { background-color: #EBF3FC; border: 1px solid #B4D3F8; border-radius: 8px; padding: 15px; }
+        .panel-ctrl-2 { background-color: #EAF5EA; border: 1px solid #BCD1BC; border-radius: 8px; padding: 15px; }
+        
+        .ctrl-title { font-weight: bold; font-size: 12px; margin-bottom: 10px; text-align: center; }
+        .ctrl-title.p1 { color: #0A58CA; }
+        .ctrl-title.p2 { color: #1E4620; }
+
+        .control-group {
+            display: grid;
+            grid-template-columns: 140px 1fr 80px;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 8px;
+        }
+
+        .control-group label { font-weight: bold; color: #495057; font-size: 11px; }
+        input[type="range"] { width: 100%; cursor: pointer; height: 18px; }
+        input[type="text"] {
+            width: 100%; padding: 2px; border: 1px solid var(--border-color);
+            border-radius: 4px; text-align: center; background: white;
+            color: black; font-size: 11px; box-sizing: border-box;
+        }
+
+        #btnPause {
+            width: 100%; padding: 8px; font-weight: bold; border: none;
+            border-radius: 4px; cursor: pointer; margin-bottom: 10px;
+            background-color: #F8D7DA; color: #842029; transition: opacity 0.2s;
+        }
+        #btnPause:hover { opacity: 0.9; }
+    </style>
+</head>
+<body>
+
+    <!-- PARTE SUPERIOR -->
+    <div class="row-top">
+        
+        <!-- 1. Painel Microscópico -->
+        <div class="panel">
+            <div class="panel-title">Visualização Microscópica (Agitação Atômica)</div>
+            <canvas id="canvasAtomos"></canvas>
+        </div>
+
+        <!-- 2. Gráfico Macroscópico -->
+        <div class="panel">
+            <div class="panel-title">Gráfico Macroscópico</div>
+            <div class="chart-container">
+                <canvas id="chartPlot"></canvas>
+            </div>
+        </div>
+
+        <!-- 3. Painel de Métricas, Equações e Tabela -->
+        <div class="panel">
+            <div class="panel-title" style="margin-bottom:5px;">Monitor de Difusão Térmica</div>
+            <div id="cronometro">Tempo: 0.00 s</div>
+
+            <!-- Painel de Equações -->
+            <div class="frame-equacao">
+                <div id="lbl_eq_tit" class="eq-tit"><b>Passo a Passo Matemático:</b></div>
+                <div class="eq-style" style="display: flex; align-items: center; justify-content: center; gap: 2px;">
+                    Formula: <i>T</i>(<i>x, t</i>) = <i>T</i><sub>fonte</sub> · erfc 
+                    <span style="font-size: 28px; line-height: 1; font-family: serif; font-weight: 300; vertical-align: middle;">(</span>
+                    <div style="display: inline-block; text-align: center; vertical-align: middle; padding: 0 4px;">
+                        <div style="padding-bottom: 2px;"><i>x</i></div>
+                        <div style="border-top: 1px solid var(--dark-blue); padding-top: 2px;">2&radic;<span style="text-decoration: overline;">&alpha; · <i>t</i></span></div>
+                    </div>
+                    <span style="font-size: 28px; line-height: 1; font-family: serif; font-weight: 300; vertical-align: middle;">)</span>
+                </div>
+                <div id="lbl_eq_substituida" class="eq-sub" style="display: flex; align-items: center; justify-content: center; gap: 2px;"></div>
+                <div id="lbl_eq_resposta" class="eq-resp"></div>
+            </div>
+
+            <!-- Tabela -->
+            <div style="font-weight: bold; font-size: 11px; color: #495057; margin-bottom: 5px;">Perfil de Temperatura ao Longo de x</div>
+            <div class="table-wrapper">
+                <table id="tabelaDados">
+                    <thead>
+                        <tr><th>Posição (x)</th><th>Temp. T(x)</th></tr>
+                    </thead>
+                    <tbody>
+                        <!-- Gerado via JS -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- PARTE INFERIOR: CONTROLES -->
+    <div class="row-bottom">
+        <!-- Parâmetros Físicos -->
+        <div class="panel-ctrl-1">
+            <div class="ctrl-title p1">1. Parâmetros Físicos do Sistema</div>
+            <div class="control-group">
+                <label>Comprimento L (m)</label>
+                <input type="range" id="sld_L" min="10" max="1000" value="100">
+                <input type="text" id="txt_L">
+            </div>
+            <div class="control-group">
+                <label>Difusividade &alpha;</label>
+                <input type="range" id="sld_alpha" min="1" max="50" value="2">
+                <input type="text" id="txt_alpha">
+            </div>
+            <div class="control-group">
+                <label>Temp. Fonte (°C)</label>
+                <input type="range" id="sld_temp" min="-200" max="1500" value="100">
+                <input type="text" id="txt_temp">
+            </div>
+        </div>
+
+        <!-- Controle Temporal -->
+        <div class="panel-ctrl-2">
+            <div class="ctrl-title p2">2. Controle Temporal (Adaptativo)</div>
+            <button id="btnPause">⏸️ Pausar</button>
+            <div class="control-group">
+                <label>Tempo t (s)</label>
+                <input type="range" id="sld_t" min="0" max="1000" value="1">
+                <input type="text" id="txt_t">
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- CONSTANTES FIXAS ---
+        const LINHAS_AT = 15;
+        const COLUNAS_AT = 50;
+
+        // --- ESTADO INICIAL ---
+        let L = 10.0;
+        let alpha = 0.2;
+        let temp_fonte = 100.0;
+        let animacao_ativa = true;
+
+        let t_max_equilibrio = 0;
+        let t_atual = 0;
+        let dt_dinamico = 0;
+
+        // Malha estável de equilíbrio dos átomos (coordenadas normalizadas 0..1)
+        const pos_equilibrio_x = [];
+        const pos_equilibrio_y = [];
+        for(let i=0; i<LINHAS_AT; i++) {
+            for(let j=0; j<COLUNAS_AT; j++) {
+                pos_equilibrio_x.push((j + 0.5) / COLUNAS_AT);
+                pos_equilibrio_y.push(LINHAS_AT > 1 ? i / (LINHAS_AT - 1) : 0.5);
+            }
+        }
+
+        // Elementos DOM
+        const canvas = document.getElementById('canvasAtomos');
+        const ctx = canvas.getContext('2d');
+        const cronometro = document.getElementById('cronometro');
+        const lblEqTit = document.getElementById('lbl_eq_tit');
+        const lblEqSub = document.getElementById('lbl_eq_substituida');
+        const lblEqResp = document.getElementById('lbl_eq_resposta');
+        const tabelaCorpo = document.getElementById('tabelaDados').getElementsByTagName('tbody')[0];
+
+        const sldL = document.getElementById('sld_L'), txtL = document.getElementById('txt_L');
+        const sldAlpha = document.getElementById('sld_alpha'), txtAlpha = document.getElementById('txt_alpha');
+        const sldTemp = document.getElementById('sld_temp'), txtTemp = document.getElementById('txt_temp');
+        const sldT = document.getElementById('sld_t'), txtT = document.getElementById('txt_t');
+        const btnPause = document.getElementById('btnPause');
+
+        // --- APROXIMAÇÃO NUMÉRICA PRECISA DA ERFC(X) ---
+        // Algoritmo de Chebyshev (precisão de ~7 casas decimais)
+        function erfc(x) {
+            let z = Math.abs(x);
+            let t = 1.0 / (1.0 + 0.5 * z);
+            let ans = t * Math.exp(-z * z - 1.26551223 + t * (1.00002368 + t * (0.37409196 + t * (0.09678418 + 
+                      t * (-0.18628806 + t * (0.27886807 + t * (-1.13520398 + t * (1.48851587 + 
+                      t * (-0.82215223 + t * 0.17087277)))))))));
+            return x >= 0 ? ans : 2.0 - ans;
+        }
+
+        function calcularTemperatura(x, time) {
+            if (time <= 0) return 0.0;
+            let argumento = x / (2.0 * Math.sqrt(alpha * time));
+            return temp_fonte * erfc(argumento);
+        }
+
+        function ajustarEscalaTempoDinamica() {
+            t_max_equilibrio = (L * L) / (alpha * 0.5);
+            dt_dinamico = t_max_equilibrio / 700.0;
+        }
+
+        // --- CONFIGURAÇÃO DO CHART.JS ---
+        const chartCtx = document.getElementById('chartPlot').getContext('2d');
+        const chart = new Chart(chartCtx, {
+            type: 'line',
+            data: {
+                labels: Array.from({length: 50}, (_, i) => (i * L / 49).toFixed(2)),
+                datasets: [{
+                    label: 'Temperatura T (°C)',
+                    data: [],
+                    borderColor: '#E74C3C',
+                    borderWidth: 3,
+                    pointRadius: 0,
+                    fill: false,
+                    tension: 0.1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    x: { type: 'linear', min: 0, max: L, title: { display: true, text: 'Posição x (m)' } },
+                    y: { title: { display: true, text: 'Temperatura T (°C)' } }
+                },
+                animation: false
+            }
+        });
+
+        // --- RENDERIZAÇÃO DO CANVAS (MICROSCOPÍCO) ---
+        function renderizarCanvas() {
+            // Ajustar resolução dinâmica interna do canvas para evitar desfoque
+            if (canvas.width !== canvas.clientWidth || canvas.height !== canvas.clientHeight) {
+                canvas.width = canvas.clientWidth;
+                canvas.height = canvas.clientHeight;
+            }
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            let margemX = 30;
+            let margemY = 40;
+            let larguraBarra = canvas.width - 2 * margemX;
+            let alturaBarra = canvas.height - 2 * margemY;
+
+            // Desenhar Borda da Barra Maciça
+            ctx.strokeStyle = '#2C3E50';
+            ctx.lineWidth = 3;
+            ctx.strokeRect(margemX, margemY, larguraBarra, alturaBarra);
+
+            let denom_temp = temp_fonte !== 0 ? temp_fonte : 1.0;
+
+            // Renderizar cada átomo com sua flutuação térmica baseada na física local
+            for (let idx = 0; idx < pos_equilibrio_x.length; idx++) {
+                let x_fisico = pos_equilibrio_x[idx] * L;
+                let t_local = calcularTemperatura(x_fisico, t_atual);
+
+                let ruido_x = 0;
+                let ruido_y = 0;
+
+                if (animacao_ativa) {
+                    let fator_agitacao = Math.abs(t_local) / Math.abs(denom_temp);
+                    fator_agitacao = Math.min(Math.max(fator_agitacao, 0.0), 1.0);
+                    
+                    // Multiplicadores empíricos proporcionais baseados na escala visual do canvas
+                    ruido_x = (Math.random() - 0.5) * 12 * fator_agitacao;
+                    ruido_y = (Math.random() - 0.5) * 12 * fator_agitacao;
+                }
+
+                let px = margemX + (pos_equilibrio_x[idx] * larguraBarra) + ruido_x;
+                let py = margemY + (0.1 * alturaBarra + pos_equilibrio_y[idx] * 0.8 * alturaBarra) + ruido_y;
+
+                // Interpolação de cores térmica estável
+                let fator = Math.min(Math.max(t_local / denom_temp, 0.0), 1.0);
+                let r, g, b;
+                if (temp_fonte >= 0) {
+                    r = Math.floor(140 + 115 * fator);
+                    g = Math.floor(200 * (1.0 - fator));
+                    b = Math.floor(220 * (1.0 - fator));
+                } else {
+                    r = Math.floor(200 * (1.0 - fator));
+                    g = Math.floor(200 * (1.0 - fator));
+                    b = Math.floor(140 + 115 * fator);
+                }
+
+                ctx.beginPath();
+                ctx.arc(px, py, 2.5, 0, 2 * Math.PI);
+                ctx.fillStyle = `rgba(${r}, ${g}, ${b}, 0.9)`;
+                ctx.fill();
+            }
+        }
+
+        // --- ATUALIZAÇÃO GERAL DA INTERFACE ---
+        function atualizarInterface() {
+            cronometro.innerText = `Tempo: ${t_atual.toFixed(2)} s  (Equilíbrio em ~${t_max_equilibrio.toFixed(1)}s)`;
+
+            // 1. Atualização do Gráfico Macroscópico
+            let pontosX = 50;
+            let dadosX = [];
+            let dadosY = [];
+            for (let i = 0; i <= pontosX; i++) {
+                let xi = (i * L) / pontosX;
+                dadosX.push(xi);
+                dadosY.push(calcularTemperatura(xi, t_atual));
+            }
+
+            chart.data.datasets[0].data = dadosY.map((val, i) => ({x: dadosX[i], y: val}));
+            chart.options.scales.x.min = 0;
+            chart.options.scales.x.max = L;
+            chart.options.scales.y.min = Math.min(0, temp_fonte) - Math.max(10, Math.abs(temp_fonte) * 0.1);
+            chart.options.scales.y.max = Math.max(0, temp_fonte) + Math.max(10, Math.abs(temp_fonte) * 0.1);
+            chart.data.datasets[0].borderColor = temp_fonte >= 0 ? '#E74C3C' : '#3498DB';
+            chart.update('none');
+
+            // 2. Renderização do Canvas dos átomos
+            renderizarCanvas();
+
+            // 3. Atualização da Tabela de Dados e Exibição da Equação
+            let passo_tabela = L / 9.0;
+            let x_amostra_didatica = 1 * passo_tabela;
+            let t_amostra_didatica = calcularTemperatura(x_amostra_didatica, t_atual);
+
+            lblEqTit.innerHTML = `<b>Passo a Passo Matemático (Para x = ${x_amostra_didatica.toFixed(2)} m):</b>`;
+            lblEqSub.innerHTML = `Substituindo: <i>T</i> = ${temp_fonte.toFixed(0)} · erfc <span style="font-size: 28px; font-family: serif; vertical-align: middle;">(</span><div style="display: inline-block; text-align: center; vertical-align: middle; padding: 0 4px;"><div style="padding-bottom: 2px;">${x_amostra_didatica.toFixed(2)}</div><div style="border-top: 1px solid #666; padding-top: 2px;">2&radic;<span style="text-decoration:overline;">${alpha.toFixed(2)} · ${t_atual.toFixed(2)}</span></div></div><span style="font-size: 28px; font-family: serif; vertical-align: middle;">)</span>`;
+            lblEqResp.innerText = `Resultado em Tempo Real: T = ${t_amostra_didatica.toFixed(1)} °C`;
+
+            let htmlTabela = "";
+            for (let idx = 0; idx < 10; idx++) {
+                let x_amostra = idx * passo_tabela;
+                let t_amostra = calcularTemperatura(x_amostra, t_atual);
+                htmlTabela += `<tr><td>${x_amostra.toFixed(2)} m</td><td>${t_amostra.toFixed(1)} °C</td></tr>`;
+            }
+            tabelaCorpo.innerHTML = htmlTabela;
+        }
+
+        // --- MANIPULAÇÃO DE ENTRADAS ---
+        function sincronizarParametros(origem) {
+            if (origem === 'sliders') {
+                L = parseFloat(sldL.value) / 10.0;
+                alpha = parseFloat(sldAlpha.value) / 10.0;
+                temp_fonte = parseFloat(sldTemp.value);
+                
+                txtL.value = L.toFixed(1);
+                txtAlpha.value = alpha.toFixed(2);
+                txtTemp.value = temp_fonte.toFixed(0);
+                ajustarEscalaTempoDinamica();
+            } else if (origem === 'inputs') {
+                L = Math.max(0.1, parseFloat(txtL.value.replace(',', '.')) || L);
+                alpha = Math.max(0.01, parseFloat(txtAlpha.value.replace(',', '.')) || alpha);
+                temp_fonte = parseFloat(txtTemp.value.replace(',', '.')) || 0.0;
+
+                sldL.value = Math.round(L * 10);
+                sldAlpha.value = Math.round(alpha * 10);
+                sldTemp.value = Math.round(temp_fonte);
+                ajustarEscalaTempoDinamica();
+            }
+            
+            if (!document.activeElement.classList.contains('time-input')) {
+                if (t_atual > t_max_equilibrio) t_atual = t_max_equilibrio * 0.001;
+                let fator_slider = (t_atual / t_max_equilibrio) * 1000;
+                sldT.value = Math.min(1000, Math.max(0, fator_slider));
+                txtT.value = t_atual.toFixed(2);
+            }
+            atualizarInterface();
+        }
+
+        // Ajuste temporal contínuo
+        function mudarSliderTempo() {
+            let porcentagem = parseFloat(sldT.value) / 1000.0;
+            t_atual = Math.max(0.001, porcentagem * t_max_equilibrio);
+            if (document.activeElement !== txtT) {
+                txtT.value = t_atual.toFixed(2);
+            }
+            atualizarInterface();
+        }
+
+        function digitarTempoDireto() {
+            let val = parseFloat(txtT.value.replace(',', '.')) || 0.0;
+            t_atual = Math.max(0.001, val);
+            let fator = Math.min(1.0, t_atual / t_max_equilibrio);
+            sldT.value = Math.round(fator * 1000);
+            atualizarInterface();
+        }
+
+        // Eventos
+        [sldL, sldAlpha, sldTemp].forEach(el => el.addEventListener('input', () => sincronizarParametros('sliders')));
+        [txtL, txtAlpha, txtTemp].forEach(el => el.addEventListener('change', () => sincronizarParametros('inputs')));
+        
+        sldT.addEventListener('input', mudarSliderTempo);
+        txtT.addEventListener('change', digitarTempoDireto);
+
+        btnPause.addEventListener('click', () => {
+            animacao_ativa = !animacao_ativa;
+            if (animacao_ativa) {
+                btnPause.innerText = "⏸️ Pausar";
+                btnPause.style.backgroundColor = "#F8D7DA";
+                btnPause.style.color = "#842029";
+            } else {
+                btnPause.innerText = "▶️ Play";
+                btnPause.style.backgroundColor = "#D1E7DD";
+                btnPause.style.color = "#0F5132";
+            }
+        });
+
+        // Loop de Renderização Física Geral (~60 FPS)
+        setInterval(() => {
+            if (animacao_ativa && t_atual < t_max_equilibrio) {
+                t_atual += dt_dinamico;
+                let fator_slider = (t_atual / t_max_equilibrio) * 1000;
+                
+                sldT.value = Math.min(1000, fator_slider);
+                if (document.activeElement !== txtT) {
+                    txtT.value = t_atual.toFixed(2);
+                }
+                atualizarInterface();
+            } else if (!animacao_ativa) {
+                // Mantém oscilações térmicas atômicas ativas mesmo quando pausado no tempo
+                renderizarCanvas();
+            }
+        }, 16);
+
+        // Inicialização do Estado
+        txtL.value = L.toFixed(1);
+        txtAlpha.value = alpha.toFixed(2);
+        txtTemp.value = temp_fonte.toFixed(0);
+        txtT.classList.add('time-input');
+        
+        ajustarEscalaTempoDinamica();
+        t_atual = t_max_equilibrio * 0.001;
+        sincronizarParametros('sliders');
+    </script>
+</body>
+</html>
