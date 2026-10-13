@@ -2,58 +2,495 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <title>Laboratório de Física - Menu</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Laboratório Virtual de Física e Engenharia - Portal</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         body {
-            font-family: sans-serif;
-            background-color: #121214;
-            color: white;
-            text-align: center;
-            padding: 50px;
+            font-family: 'Inter', sans-serif;
+            background-color: #0b0f17;
+            color: #f3f4f6;
         }
-        h1 { color: #00ffcc; }
-        .menu-container {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 15px;
-            margin-top: 30px;
+
+        .glass-card {
+            background: rgba(22, 27, 34, 0.75);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
-        /* Estilo dos botões do menu */
-        .botao-simulacao {
-            display: block;
-            width: 300px;
-            padding: 15px;
-            background-color: #202024;
-            color: white;
-            text-decoration: none; /* Remove o sublinhado do link */
-            border-radius: 8px;
-            border: 1px solid #323238;
-            font-size: 18px;
-            transition: 0.2s;
+
+        .glass-card:hover {
+            transform: translateY(-6px);
+            border-color: rgba(0, 242, 254, 0.5);
+            box-shadow: 0 12px 30px -10px rgba(0, 242, 254, 0.25);
         }
-        /* Efeito quando passa o mouse por cima */
-        .botao-simulacao:hover {
-            background-color: #00ffcc;
-            color: #121214;
-            transform: scale(1.05);
+
+        .gradient-text {
+            background: linear-gradient(135deg, #00f2fe 0%, #4facfe 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .gradient-btn {
+            background: linear-gradient(135deg, #00f2fe 0%, #00a8ff 100%);
+            color: #0b0f17;
+            font-weight: 600;
+            transition: all 0.2s ease;
+        }
+
+        .gradient-btn:hover {
+            opacity: 0.9;
+            box-shadow: 0 0 15px rgba(0, 242, 254, 0.4);
+            transform: scale(1.02);
+        }
+
+        /* Canvas visualizer style */
+        .preview-canvas {
+            width: 100%;
+            height: 140px;
+            background-color: #05080e;
+            border-radius: 0.5rem;
         }
     </style>
 </head>
-<body>
+<body class="min-h-screen flex flex-col justify-between">
 
-    <h1>Meu Laboratório de Física</h1>
-    <p>Selecione uma simulação abaixo para testar:</p>
+    <div>
+        <!-- Navigation Bar -->
+        <nav class="border-b border-gray-800 bg-opacity-50 bg-gray-900 backdrop-blur-md sticky top-0 z-50">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+                <div class="flex items-center space-x-3">
+                    <div class="p-2 bg-cyan-500/10 rounded-lg border border-cyan-500/30">
+                        <i class="fa-solid fa-flask text-cyan-400 text-xl"></i>
+                    </div>
+                    <span class="font-bold text-lg tracking-wide text-white">VIRTUAL LAB <span class="text-xs px-2 py-0.5 rounded bg-cyan-950 text-cyan-400 border border-cyan-800 ml-2">v2.0</span></span>
+                </div>
+                <div class="flex items-center space-x-4 text-sm text-gray-400">
+                    <span class="hidden sm:inline-flex items-center"><i class="fa-solid fa-code-branch mr-2 text-cyan-400"></i> Open Source</span>
+                    <a href="https://github.com" target="_blank" class="hover:text-cyan-400 transition-colors">
+                        <i class="fa-brands fa-github text-xl"></i>
+                    </a>
+                </div>
+            </div>
+        </nav>
 
-    <div class="menu-container">
-        <!-- Os links abaixo apontam para os outros arquivos na mesma pasta -->
-        <a href="simulacao1.html" class="botao-simulacao">1. Capacitor Simples</a>
-        <a href="simulacao2.html" class="botao-simulacao">2. Colisões</a>
-        <a href="simulacao3.html" class="botao-simulacao">3. Pêndulo Simples</a>
-        <a href="simulacao4.html" class="botao-simulacao">4. Condução Térmica</a>
-        <a href="simulacao5.html" class="botao-simulacao">5. Queda Livre</a>
-        <a href="simulacao6.html" class="botao-simulacao">6. Ondas</a>
+        <!-- Hero Banner -->
+        <header class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 text-center">
+            <div class="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 text-xs font-semibold uppercase tracking-wider mb-6">
+                <span class="w-2 h-2 rounded-full bg-cyan-400 animate-pulse"></span>
+                <span>Plataforma Didático-Pedagógica Interativa</span>
+            </div>
+            
+            <h1 class="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight mb-4">
+                Laboratório Virtual de <span class="gradient-text">Física & Engenharia</span>
+            </h1>
+            
+            <p class="max-w-3xl mx-auto text-gray-400 text-base sm:text-lg mb-8 leading-relaxed">
+                Ambiente autônomo de simulação em tempo real para investigação de conceitos, modelagem matemática e experimentação multissensorial.
+            </p>
+
+            <!-- Badges -->
+            <div class="flex flex-wrap justify-center gap-3 text-xs text-gray-300 mb-10">
+                <span class="px-3 py-1.5 rounded-md bg-gray-800/80 border border-gray-700/60 flex items-center gap-2">
+                    <i class="fa-solid fa-bolt text-amber-400"></i> Simulação 60 FPS
+                </span>
+                <span class="px-3 py-1.5 rounded-md bg-gray-800/80 border border-gray-700/60 flex items-center gap-2">
+                    <i class="fa-solid fa-wave-square text-cyan-400"></i> Web Audio API
+                </span>
+                <span class="px-3 py-1.5 rounded-md bg-gray-800/80 border border-gray-700/60 flex items-center gap-2">
+                    <i class="fa-brands fa-python text-blue-400"></i> Modelagem Python & JS
+                </span>
+            </div>
+
+            <!-- Search Bar -->
+            <div class="max-w-md mx-auto relative mb-6">
+                <i class="fa-solid fa-magnifying-glass absolute left-4 top-1/2 -translate-y-1/2 text-gray-500"></i>
+                <input type="text" id="searchInput" onkeyup="filterCards()" placeholder="Buscar simulação (ex: ondas, capacitor, colisão)..." 
+                       class="w-full bg-gray-900/90 border border-gray-700/80 rounded-xl py-3 pl-11 pr-4 text-sm text-gray-200 placeholder-gray-500 focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 transition-all">
+            </div>
+        </header>
+
+        <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-16">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="cardGrid">
+
+                <!-- CARD 1: Capacitores -->
+                <div class="glass-card rounded-2xl p-5 flex flex-col justify-between card-item" data-title="circuitos eletricos capacitor rc carga descarga">
+                    <div>
+                        <!-- DICA DE IMAGEM: Você pode substituir a canvas abaixo por uma tag img se preferir:
+                        <img src="imagens/capacitor.jpg" alt="Capacitor" class="w-full h-36 object-cover rounded-lg mb-4"> 
+                        -->
+                        <canvas id="canvasCapacitor" class="preview-canvas mb-4"></canvas>
+                        
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-xs font-semibold text-cyan-400 tracking-wider uppercase">Eletromagnetismo</span>
+                            <span class="text-xs text-gray-500 font-mono">simulacao1.html</span>
+                        </div>
+                        <h3 class="text-lg font-bold text-white mb-2">1. Circuitos & Capacitores</h3>
+                        <p class="text-xs text-gray-400 leading-relaxed mb-4">
+                            Estudo de carga e descarga em circuitos RC, dinâmica de campo elétrico e resposta temporal do dielétrico.
+                        </p>
+                    </div>
+                    <a href="simulacao1.html" class="gradient-btn w-full py-2.5 rounded-xl flex items-center justify-center gap-2 text-sm shadow-md">
+                        <span>Acessar Simulação</span>
+                        <i class="fa-solid fa-arrow-right text-xs"></i>
+                    </a>
+                </div>
+
+                <!-- CARD 2: Colisões -->
+                <div class="glass-card rounded-2xl p-5 flex flex-col justify-between card-item" data-title="colisoes unidimensionais 1d conservacao momento energia elastica inelastica">
+                    <div>
+                        <canvas id="canvasColisao" class="preview-canvas mb-4"></canvas>
+                        
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-xs font-semibold text-cyan-400 tracking-wider uppercase">Mecânica Clássica</span>
+                            <span class="text-xs text-gray-500 font-mono">simulacao2.html</span>
+                        </div>
+                        <h3 class="text-lg font-bold text-white mb-2">2. Colisões Unidimensionais (1D)</h3>
+                        <p class="text-xs text-gray-400 leading-relaxed mb-4">
+                            Análise de conservação do momento linear e transferência de energia cinética em choques elásticos e inelásticos.
+                        </p>
+                    </div>
+                    <a href="simulacao2.html" class="gradient-btn w-full py-2.5 rounded-xl flex items-center justify-center gap-2 text-sm shadow-md">
+                        <span>Acessar Simulação</span>
+                        <i class="fa-solid fa-arrow-right text-xs"></i>
+                    </a>
+                </div>
+
+                <!-- CARD 3: Pêndulo -->
+                <div class="glass-card rounded-2xl p-5 flex flex-col justify-between card-item" data-title="pendulo simples mhs movimento harmonico gravidade oscilacoes">
+                    <div>
+                        <canvas id="canvasPendulo" class="preview-canvas mb-4"></canvas>
+
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-xs font-semibold text-cyan-400 tracking-wider uppercase">Oscilações</span>
+                            <span class="text-xs text-gray-500 font-mono">simulacao3.html</span>
+                        </div>
+                        <h3 class="text-lg font-bold text-white mb-2">3. Pêndulo Simples e MHS</h3>
+                        <p class="text-xs text-gray-400 leading-relaxed mb-4">
+                            Investigação do Movimento Harmônico Simples, período, forças restauradoras e aproximação de pequenas oscilações.
+                        </p>
+                    </div>
+                    <a href="simulacao3.html" class="gradient-btn w-full py-2.5 rounded-xl flex items-center justify-center gap-2 text-sm shadow-md">
+                        <span>Acessar Simulação</span>
+                        <i class="fa-solid fa-arrow-right text-xs"></i>
+                    </a>
+                </div>
+
+                <!-- CARD 4: Condução Térmica -->
+                <div class="glass-card rounded-2xl p-5 flex flex-col justify-between card-item" data-title="conducao termica calor difusao fourier gradiente temperatura">
+                    <div>
+                        <canvas id="canvasTermica" class="preview-canvas mb-4"></canvas>
+
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-xs font-semibold text-cyan-400 tracking-wider uppercase">Termodinâmica</span>
+                            <span class="text-xs text-gray-500 font-mono">simulacao4.html</span>
+                        </div>
+                        <h3 class="text-lg font-bold text-white mb-2">4. Condução Térmica</h3>
+                        <p class="text-xs text-gray-400 leading-relaxed mb-4">
+                            Modelagem da Lei de Fourier para difusão de calor em barras sólidas e estabelecimento do gradiente térmico.
+                        </p>
+                    </div>
+                    <a href="simulacao4.html" class="gradient-btn w-full py-2.5 rounded-xl flex items-center justify-center gap-2 text-sm shadow-md">
+                        <span>Acessar Simulação</span>
+                        <i class="fa-solid fa-arrow-right text-xs"></i>
+                    </a>
+                </div>
+
+                <!-- CARD 5: Queda Livre -->
+                <div class="glass-card rounded-2xl p-5 flex flex-col justify-between card-item" data-title="queda livre lancamento projetil gravidade cinematica">
+                    <div>
+                        <canvas id="canvasQueda" class="preview-canvas mb-4"></canvas>
+
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-xs font-semibold text-cyan-400 tracking-wider uppercase">Cinemática</span>
+                            <span class="text-xs text-gray-500 font-mono">simulacao5.html</span>
+                        </div>
+                        <h3 class="text-lg font-bold text-white mb-2">5. Queda Livre e Lançamentos</h3>
+                        <p class="text-xs text-gray-400 leading-relaxed mb-4">
+                            Simulação do movimento uniformemente variado sob ação da aceleração da gravidade e resistência do ar.
+                        </p>
+                    </div>
+                    <a href="simulacao5.html" class="gradient-btn w-full py-2.5 rounded-xl flex items-center justify-center gap-2 text-sm shadow-md">
+                        <span>Acessar Simulação</span>
+                        <i class="fa-solid fa-arrow-right text-xs"></i>
+                    </a>
+                </div>
+
+                <!-- CARD 6: Ondas -->
+                <div class="glass-card rounded-2xl p-5 flex flex-col justify-between card-item" data-title="ondas progressivas acustica frequencia audio senoidal osciloscopio">
+                    <div>
+                        <canvas id="canvasOndas" class="preview-canvas mb-4"></canvas>
+
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-xs font-semibold text-cyan-400 tracking-wider uppercase">Ondulatória e Acústica</span>
+                            <span class="text-xs text-gray-500 font-mono">simulacao6.html</span>
+                        </div>
+                        <h3 class="text-lg font-bold text-white mb-2">6. Ondas Progressivas & Áudio</h3>
+                        <p class="text-xs text-gray-400 leading-relaxed mb-4">
+                            Simulação de propagação senoidal com mapeamento preditivo espacial/temporal e sintonia sonora em tempo real.
+                        </p>
+                    </div>
+                    <a href="simulacao6.html" class="gradient-btn w-full py-2.5 rounded-xl flex items-center justify-center gap-2 text-sm shadow-md">
+                        <span>Acessar Simulação</span>
+                        <i class="fa-solid fa-arrow-right text-xs"></i>
+                    </a>
+                </div>
+
+            </div>
+        </main>
     </div>
 
+    <footer class="border-t border-gray-800/80 bg-gray-950 py-8">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-gray-500">
+            <div class="flex items-center space-x-2">
+                <i class="fa-solid fa-graduation-cap text-cyan-500"></i>
+                <span>Desenvolvido para apoio didático e pesquisa acadêmica (Currículo Lattes).</span>
+            </div>
+            <div>
+                <span>Licença Aberta &bull; Todos os direitos reservados.</span>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // --- 1. Filtro de Pesquisa ---
+        function filterCards() {
+            const query = document.getElementById('searchInput').value.toLowerCase();
+            const cards = document.querySelectorAll('.card-item');
+
+            cards.forEach(card => {
+                const titleData = card.getAttribute('data-title').toLowerCase();
+                if (titleData.includes(query)) {
+                    card.style.display = "flex";
+                } else {
+                    card.style.display = "none";
+                }
+            });
+        }
+
+        // --- 2. Animações Dinâmicas dos Cards em Canvas (Pre-visualizações) ---
+        let time = 0;
+
+        // Physics State for Preview 2 (Elastic Collisions)
+        let col1 = { x: 0, v: 2.2, radius: 10, mass: 1, color: '#00f2fe' };
+        let col2 = { x: 0, v: -1.8, radius: 10, mass: 1, color: '#ff4757' };
+
+        // Physics State for Preview 5 (Bouncing Free Fall)
+        let ball = { y: 20, vy: 0, gravity: 0.38, restitution: 0.72, radius: 8 };
+
+        function initCanvasPreviews() {
+            // Setup Canvases
+            const c1 = document.getElementById('canvasCapacitor');
+            const c2 = document.getElementById('canvasColisao');
+            const c3 = document.getElementById('canvasPendulo');
+            const c4 = document.getElementById('canvasTermica');
+            const c5 = document.getElementById('canvasQueda');
+            const c6 = document.getElementById('canvasOndas');
+
+            const canvases = [c1, c2, c3, c4, c5, c6];
+            canvases.forEach(c => {
+                if (c) {
+                    c.width = c.clientWidth * window.devicePixelRatio || 300;
+                    c.height = c.clientHeight * window.devicePixelRatio || 140;
+                }
+            });
+
+            // Set initial dynamic positions for collision preview
+            if (c2) {
+                col1.x = c2.width * 0.25;
+                col2.x = c2.width * 0.75;
+            }
+
+            function render() {
+                time += 0.03;
+
+                // 1. Capacitor (Carga piscando/circuito)
+                if (c1) {
+                    const ctx = c1.getContext('2d');
+                    ctx.clearRect(0, 0, c1.width, c1.height);
+                    ctx.strokeStyle = '#00f2fe';
+                    ctx.lineWidth = 2;
+                    ctx.beginPath();
+                    ctx.rect(c1.width*0.2, c1.height*0.2, c1.width*0.6, c1.height*0.6);
+                    ctx.stroke();
+                    // Placas do capacitor
+                    ctx.fillStyle = '#4facfe';
+                    const charge = (Math.sin(time*2) + 1) / 2;
+                    ctx.fillRect(c1.width*0.45, c1.height*0.3, 6, c1.height*0.4);
+                    ctx.fillRect(c1.width*0.55, c1.height*0.3, 6, c1.height*0.4);
+                    // Brilho do campo
+                    ctx.fillStyle = `rgba(0, 242, 254, ${charge * 0.5})`;
+                    ctx.fillRect(c1.width*0.45 + 6, c1.height*0.3, c1.width*0.1 - 6, c1.height*0.4);
+                }
+
+                // 2. Colisão (Duas esferas com colisão elástica real 1D)
+                if (c2) {
+                    const ctx = c2.getContext('2d');
+                    ctx.clearRect(0, 0, c2.width, c2.height);
+
+                    // Update positions
+                    col1.x += col1.v;
+                    col2.x += col2.v;
+
+                    // Wall boundaries
+                    const minX = c2.width * 0.15;
+                    const maxX = c2.width * 0.85;
+
+                    if (col1.x - col1.radius < minX) {
+                        col1.x = minX + col1.radius;
+                        col1.v *= -1;
+                    }
+                    if (col2.x + col2.radius > maxX) {
+                        col2.x = maxX - col2.radius;
+                        col2.v *= -1;
+                    }
+
+                    // Ball-to-ball elastic collision detection
+                    const dist = Math.abs(col1.x - col2.x);
+                    if (dist < col1.radius + col2.radius) {
+                        // Separate balls to prevent sticking
+                        const overlap = (col1.radius + col2.radius) - dist;
+                        col1.x -= overlap / 2;
+                        col2.x += overlap / 2;
+
+                        // 1D Elastic Collision Formula (equal masses)
+                        const v1f = ((col1.mass - col2.mass) * col1.v + 2 * col2.mass * col2.v) / (col1.mass + col2.mass);
+                        const v2f = ((col2.mass - col1.mass) * col2.v + 2 * col1.mass * col1.v) / (col1.mass + col2.mass);
+
+                        col1.v = v1f;
+                        col2.v = v2f;
+                    }
+
+                    // Render track bounds
+                    ctx.strokeStyle = '#1f2937';
+                    ctx.lineWidth = 2;
+                    ctx.beginPath();
+                    ctx.moveTo(minX - col1.radius, c2.height * 0.65);
+                    ctx.lineTo(maxX + col2.radius, c2.height * 0.65);
+                    ctx.stroke();
+
+                    // Render Ball 1
+                    ctx.beginPath();
+                    ctx.arc(col1.x, c2.height * 0.5, col1.radius, 0, Math.PI * 2);
+                    ctx.fillStyle = col1.color;
+                    ctx.shadowColor = col1.color;
+                    ctx.shadowBlur = 8;
+                    ctx.fill();
+
+                    // Render Ball 2
+                    ctx.beginPath();
+                    ctx.arc(col2.x, c2.height * 0.5, col2.radius, 0, Math.PI * 2);
+                    ctx.fillStyle = col2.color;
+                    ctx.shadowColor = col2.color;
+                    ctx.shadowBlur = 8;
+                    ctx.fill();
+
+                    ctx.shadowBlur = 0; // Reset blur
+                }
+
+                // 3. Pêndulo
+                if (c3) {
+                    const ctx = c3.getContext('2d');
+                    ctx.clearRect(0, 0, c3.width, c3.height);
+                    const angle = Math.sin(time * 2) * 0.5;
+                    const originX = c3.width / 2;
+                    const originY = 20;
+                    const length = c3.height * 0.6;
+                    const bobX = originX + Math.sin(angle) * length;
+                    const bobY = originY + Math.cos(angle) * length;
+
+                    ctx.strokeStyle = '#9ca3af';
+                    ctx.lineWidth = 2;
+                    ctx.beginPath();
+                    ctx.moveTo(originX, originY);
+                    ctx.lineTo(bobX, bobY);
+                    ctx.stroke();
+
+                    ctx.beginPath();
+                    ctx.arc(bobX, bobY, 10, 0, Math.PI*2);
+                    ctx.fillStyle = '#00f2fe';
+                    ctx.fill();
+                }
+
+                // 4. Condução Térmica (Gradiente)
+                if (c4) {
+                    const ctx = c4.getContext('2d');
+                    ctx.clearRect(0, 0, c4.width, c4.height);
+                    const grad = ctx.createLinearGradient(c4.width*0.2, 0, c4.width*0.8, 0);
+                    grad.addColorStop(0, '#ff4757');
+                    grad.addColorStop(1, '#1e90ff');
+                    ctx.fillStyle = grad;
+                    ctx.fillRect(c4.width*0.15, c4.height*0.4, c4.width*0.7, c4.height*0.2);
+                }
+
+                // 5. Queda Livre com Quique e Dissipação
+                if (c5) {
+                    const ctx = c5.getContext('2d');
+                    ctx.clearRect(0, 0, c5.width, c5.height);
+
+                    const groundY = c5.height * 0.82;
+
+                    // Physics update
+                    ball.vy += ball.gravity;
+                    ball.y += ball.vy;
+
+                    // Ground collision with restitution coefficient
+                    if (ball.y + ball.radius >= groundY) {
+                        ball.y = groundY - ball.radius;
+                        ball.vy = -ball.vy * ball.restitution;
+
+                        // Reset simulation when energy degrades below threshold
+                        if (Math.abs(ball.vy) < 0.8) {
+                            ball.y = 18;
+                            ball.vy = 0;
+                        }
+                    }
+
+                    // Render ground platform
+                    ctx.strokeStyle = '#374151';
+                    ctx.lineWidth = 3;
+                    ctx.beginPath();
+                    ctx.moveTo(c5.width * 0.25, groundY);
+                    ctx.lineTo(c5.width * 0.75, groundY);
+                    ctx.stroke();
+
+                    // Render falling/bouncing ball
+                    ctx.beginPath();
+                    ctx.arc(c5.width * 0.5, ball.y, ball.radius, 0, Math.PI * 2);
+                    ctx.fillStyle = '#2ed573';
+                    ctx.shadowColor = '#2ed573';
+                    ctx.shadowBlur = 6;
+                    ctx.fill();
+                    ctx.shadowBlur = 0;
+                }
+
+                // 6. Ondas
+                if (c6) {
+                    const ctx = c6.getContext('2d');
+                    ctx.clearRect(0, 0, c6.width, c6.height);
+                    ctx.beginPath();
+                    ctx.strokeStyle = '#00f2fe';
+                    ctx.lineWidth = 2.5;
+                    for (let x = 0; x < c6.width; x++) {
+                        const y = c6.height/2 + Math.sin(x * 0.05 - time * 3) * 20;
+                        if (x === 0) ctx.moveTo(x, y);
+                        else ctx.lineTo(x, y);
+                    }
+                    ctx.stroke();
+                }
+
+                requestAnimationFrame(render);
+            }
+
+            render();
+        }
+
+        window.onload = initCanvasPreviews;
+    </script>
 </body>
 </html>
