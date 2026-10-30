@@ -248,7 +248,7 @@
         </main>
     </div>
 
-    <!-- PAINEL FIXO DO AVATAR AI -->
+    <!-- PAINEL FIXO DO AVATAR COM VÍDEO E BOTÃO DE PLAY POR CLIQUE -->
     <div id="avatarWidget" class="fixed bottom-6 right-6 z-50 flex flex-col items-end transition-all duration-300">
         
         <div id="avatarBox" class="bg-gray-900/95 border border-cyan-500/40 rounded-2xl shadow-2xl backdrop-blur-md overflow-hidden transition-all duration-300 w-[280px] sm:w-[320px]">
@@ -260,27 +260,30 @@
                 </div>
                 
                 <div class="flex items-center gap-2 text-gray-400 text-xs">
-                    <button onclick="toggleAudio()" id="btnAudio" title="Mutar/Ativar Áudio" class="hover:text-cyan-400 transition-colors p-1">
-                        <i class="fa-solid fa-volume-high text-cyan-400" id="iconAudio"></i>
-                    </button>
                     <button onclick="toggleAvatarWidget()" title="Minimizar Avatar" class="hover:text-white transition-colors p-1">
                         <i class="fa-solid fa-chevron-down" id="iconMinimize"></i>
                     </button>
                 </div>
             </div>
 
-            <!-- Renderizador do Avatar AI -->
-            <div id="ai-avatar" class="w-full h-[220px] bg-black/40 relative">
-                <button id="btnStartWelcome" onclick="iniciarApresentacaoComAudio()" class="absolute inset-0 m-auto w-fit h-fit px-4 py-2 bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold text-xs rounded-xl shadow-lg flex items-center gap-2 border border-cyan-300 z-10 transition-transform active:scale-95">
+            <!-- CONTAINER DO VÍDEO LOCAL COM BOTAO DE REPRODUÇÃO ÚNICA -->
+            <div id="ai-avatar" class="w-full h-[220px] bg-black/60 relative overflow-hidden flex items-center justify-center">
+                <video id="videoAvatar" class="w-full h-full object-cover object-top" playsinline>
+                    <source src="avatar-video.mp4" type="video/mp4">
+                    Seu navegador não suporta a exibição de vídeos.
+                </video>
+
+                <!-- BOTÃO SOBREPOSTO PARA EXECUTAR A FALA UMA VEZ OU REPETIR -->
+                <button id="btnPlayVideo" onclick="tocarApresentacao()" class="absolute bg-cyan-500/90 hover:bg-cyan-400 text-slate-950 px-4 py-2 rounded-xl font-bold text-xs flex items-center gap-2 shadow-lg transition-transform active:scale-95 border border-cyan-300 z-10">
                     <i class="fa-solid fa-play"></i>
-                    <span>Ativar Guia de Voz</span>
+                    <span id="btnText">Ouvir Apresentação</span>
                 </button>
             </div>
 
             <div class="p-3 bg-gray-950/90 border-t border-gray-800 flex flex-col gap-2">
                 <div id="chatHistory" class="chat-scroll h-24 overflow-y-auto flex flex-col gap-1.5 text-xs pr-1">
                     <div class="bg-cyan-950/40 border border-cyan-800/40 text-cyan-200 p-2 rounded-lg">
-                        👋 Olá! Faça uma pergunta ao tutor ou ative o áudio acima.
+                        👋 Olá! Clique no botão para ouvir a apresentação do professor.
                     </div>
                 </div>
 
@@ -311,20 +314,37 @@
         </div>
     </footer>
 
-    <!-- SCRIPT DO SDK AVATAR AI -->
-    <script type="module" src="https://embed.avataraisdk.com/sdk.js"></script>
-    <script type="module">
-        window.avatar = AIAvatar.init({
-            apiKey: 'sk-66814e87e797a32fdd3209cc8dfb9cf7db3e9d4e0abc5763',
-            mount: '#ai-avatar',
-            onError(e) { console.error('[AIAvatar Error]', e.code, e.message); },
-        });
-    </script>
-
     <script>
-        let isMuted = false;
+        // Função para tocar o vídeo com áudio UMA VEZ apenas por clique
+        function tocarApresentacao() {
+            const video = document.getElementById('videoAvatar');
+            const btn = document.getElementById('btnPlayVideo');
 
-        // Histórico mantido para contexto no LLM e instruído para usar LaTeX
+            if (video) {
+                video.currentTime = 0; // Reinicia do início
+                video.muted = false;   // Ativa o áudio do vídeo
+                
+                if (btn) btn.classList.add('hidden'); // Esconde o botão durante a reprodução
+
+                video.play().catch(err => console.warn("Erro ao reproduzir o vídeo:", err));
+            }
+        }
+
+        // Evento disparado assim que o vídeo termina de falar (12.5s)
+        document.addEventListener('DOMContentLoaded', () => {
+            const video = document.getElementById('videoAvatar');
+            const btn = document.getElementById('btnPlayVideo');
+            const btnText = document.getElementById('btnText');
+
+            if (video) {
+                video.onended = () => {
+                    if (btn) btn.classList.remove('hidden'); // Exibe o botão novamente
+                    if (btnText) btnText.textContent = 'Ouvir Novamente'; // Atualiza o texto
+                };
+            }
+        });
+
+        // Histórico de conversa mantido para contexto no modelo da Groq
         let historicoConversa = [
             {
                 role: "system",
@@ -332,39 +352,7 @@
             }
         ];
 
-        function toggleAudio() {
-            isMuted = !isMuted;
-            const icon = document.getElementById('iconAudio');
-            if (isMuted) {
-                icon.className = 'fa-solid fa-volume-xmark text-rose-400';
-                if (window.speechSynthesis) window.speechSynthesis.cancel();
-            } else {
-                icon.className = 'fa-solid fa-volume-high text-cyan-400';
-            }
-        }
-
-        function iniciarApresentacaoComAudio() {
-            const btn = document.getElementById('btnStartWelcome');
-            if (btn) btn.style.display = 'none';
-
-            falarComAvatar("Olá! Bem-vindo ao Laboratório Virtual de Física. Como posso ajudar nas suas simulações hoje?");
-        }
-
-        // Limpa formatação LaTeX/Markdown APENAS para a leitura por voz do avatar
-        function limparFormatacaoParaVoz(texto) {
-            if (!texto) return "";
-            return texto
-                .replace(/\\\(|\\\)/g, '')
-                .replace(/\\\[|\\\]/g, '')
-                .replace(/\\frac\{([^}]+)\}\{([^}]+)\}/g, '($1/$2)')
-                .replace(/\*\*/g, '')
-                .replace(/\*/g, '')
-                .replace(/_([0-9a-zA-Z])/g, '$1')
-                .replace(/\\/g, '')
-                .trim();
-        }
-
-        // INTEGRAÇÃO GROQ (Chave da API fornecida)
+        // INTEGRAÇÃO GROQ API COM MODELO OPENAI/GPT-OSS-120B
         async function chamarLLM(promptUsuario) {
             const apiKey = "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"; 
 
@@ -421,37 +409,13 @@
             }
         }
 
-        // SÍNTESE DE VOZ COM FALLBACK AUTOMÁTICO
-        function falarComAvatar(texto) {
-            if (isMuted) return;
-
-            try {
-                if (window.avatar && typeof window.avatar.speak === 'function') {
-                    window.avatar.speak(texto);
-                    return;
-                }
-            } catch (e) {
-                console.warn("Avatar SDK indisponível. Alternando para a voz nativa.", e);
-            }
-
-            if ('speechSynthesis' in window) {
-                window.speechSynthesis.cancel();
-                const utterance = new SpeechSynthesisUtterance(texto);
-                utterance.lang = 'pt-BR';
-                window.speechSynthesis.speak(utterance);
-            }
-        }
-
-        // MANIPULADOR DO CHAT COM KATEX E VOZ SANITIZADA
+        // MANIPULADOR DO CHAT COM FORMATAÇÃO KATEX
         async function enviarMensagemTexto(e) {
             e.preventDefault();
             const input = document.getElementById('chatInput');
             const userText = input.value.trim();
 
             if (!userText) return;
-
-            const btnWelcome = document.getElementById('btnStartWelcome');
-            if (btnWelcome) btnWelcome.style.display = 'none';
 
             const chatHistory = document.getElementById('chatHistory');
 
@@ -501,10 +465,6 @@
             }
 
             chatHistory.scrollTop = chatHistory.scrollHeight;
-
-            // 6. Transmite a fala limpa para o avatar (sem barras nem símbolos que travam o áudio)
-            const textoLimpoVoz = limparFormatacaoParaVoz(respostaIA);
-            falarComAvatar(textoLimpoVoz);
 
             input.placeholder = "Faça uma pergunta sobre a física...";
             input.disabled = false;
