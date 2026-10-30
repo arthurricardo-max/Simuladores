@@ -10,6 +10,12 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <!-- FontAwesome Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- KaTeX (Renderizador de LaTeX para Equações Matemáticas) -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
+
     <style>
         body {
             font-family: 'Inter', sans-serif;
@@ -318,11 +324,11 @@
     <script>
         let isMuted = false;
 
-        // Histórico da conversa mantido em memória para dar contexto ao LLM
+        // Histórico mantido para contexto no LLM e instruído para usar LaTeX
         let historicoConversa = [
             {
                 role: "system",
-                content: "Você é o Tutor Virtual de Física do Laboratório. Responda em português de forma clara, entusiasmada e objetiva (no máximo 2 a 3 frases). REGRA OBRIGATÓRIA DE FORMATAÇÃO: NUNCA use formatação LaTeX (como \\(, \\), \\frac, \\times) e NUNCA use marcadores Markdown (** ou #). Escreva fórmulas em texto puro simples e legível (exemplo: h = (g*t^2)/2 ou v = v0 + g*t), pois sua resposta será lida em voz alta por síntese de áudio."
+                content: "Você é o Tutor Virtual de Física do Laboratório. Responda em português de forma clara, entusiasmada e objetiva (no máximo 2 a 3 frases). Utilize formatação LaTeX padrão entre \\( ... \\) para equações na mesma linha ou \\[ ... \\] para equações em destaque."
             }
         ];
 
@@ -344,7 +350,7 @@
             falarComAvatar("Olá! Bem-vindo ao Laboratório Virtual de Física. Como posso ajudar nas suas simulações hoje?");
         }
 
-        // --- SANITIZADOR PARA REMOVER LATEX E MARKDOWN (VOZ E UI) ---
+        // Limpa formatação LaTeX/Markdown APENAS para a leitura por voz do avatar
         function limparFormatacaoParaVoz(texto) {
             if (!texto) return "";
             return texto
@@ -358,7 +364,7 @@
                 .trim();
         }
 
-        // --- INTEGRAÇÃO GROQ COM HISTÓRICO DE CONVERSA (LLAMA 3.3 70B) ---
+        // INTEGRAÇÃO GROQ (Chave da API fornecida)
         async function chamarLLM(promptUsuario) {
             const apiKey = "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"; 
 
@@ -368,7 +374,6 @@
 
             const url = "https://api.groq.com/openai/v1/chat/completions";
 
-            // Adiciona a pergunta atual ao histórico contínuo
             historicoConversa.push({ role: "user", content: promptUsuario });
 
             const controller = new AbortController();
@@ -394,22 +399,19 @@
                 const data = await response.json();
 
                 if (!response.ok) {
-                    historicoConversa.pop(); // Remove a pergunta que falhou para manter a integridade
+                    historicoConversa.pop();
                     console.error("Erro da API da Groq:", data);
                     return `⚠️ Erro na API Groq (${response.status}): ${data.error?.message || 'Falha na requisição.'}`;
                 }
 
                 const textoBruto = data.choices[0].message.content;
-                const textoLimpo = limparFormatacaoParaVoz(textoBruto);
+                historicoConversa.push({ role: "assistant", content: textoBruto });
 
-                // Armazena a resposta tratada no histórico da conversa
-                historicoConversa.push({ role: "assistant", content: textoLimpo });
-
-                return textoLimpo;
+                return textoBruto;
 
             } catch (err) {
                 clearTimeout(timeoutId);
-                historicoConversa.pop(); // Remove a pergunta em caso de erro de rede
+                historicoConversa.pop();
                 console.error("Erro de Conexão:", err);
 
                 if (err.name === 'AbortError') {
@@ -419,7 +421,7 @@
             }
         }
 
-        // --- SÍNTESE DE VOZ COM FALLBACK AUTOMÁTICO ---
+        // SÍNTESE DE VOZ COM FALLBACK AUTOMÁTICO
         function falarComAvatar(texto) {
             if (isMuted) return;
 
@@ -440,7 +442,7 @@
             }
         }
 
-        // --- MANIPULADOR DO CHAT COM INDICADOR DE 'PENSANDO' ---
+        // MANIPULADOR DO CHAT COM KATEX E VOZ SANITIZADA
         async function enviarMensagemTexto(e) {
             e.preventDefault();
             const input = document.getElementById('chatInput');
@@ -464,7 +466,7 @@
             input.disabled = true;
             chatHistory.scrollTop = chatHistory.scrollHeight;
 
-            // 2. Exibe indicador visual de carregamento
+            // 2. Exibe o indicador 'pensando'
             const thinkingDiv = document.createElement('div');
             thinkingDiv.id = 'thinkingIndicator';
             thinkingDiv.className = 'bg-cyan-950/40 border border-cyan-800/40 text-cyan-300 p-2 rounded-lg mr-4 flex items-center gap-2 italic animate-pulse';
@@ -481,15 +483,28 @@
                 currentThinking.remove();
             }
 
-            // 5. Exibe a resposta final limpa
+            // 5. Exibe a resposta com LaTeX no Chat
             const botMsgDiv = document.createElement('div');
             botMsgDiv.className = 'bg-cyan-950/50 border border-cyan-800/60 text-cyan-200 p-2 rounded-lg mr-4';
             botMsgDiv.textContent = "🤖 " + respostaIA;
             chatHistory.appendChild(botMsgDiv);
+
+            // Aplica a renderização do KaTeX na caixa de mensagem do chat
+            if (window.renderMathInElement) {
+                renderMathInElement(botMsgDiv, {
+                    delimiters: [
+                        {left: '\\[', right: '\\]', display: true},
+                        {left: '\\(', right: '\\)', display: false}
+                    ],
+                    throwOnError: false
+                });
+            }
+
             chatHistory.scrollTop = chatHistory.scrollHeight;
 
-            // 6. Reproduz a voz
-            falarComAvatar(respostaIA);
+            // 6. Transmite a fala limpa para o avatar (sem barras nem símbolos que travam o áudio)
+            const textoLimpoVoz = limparFormatacaoParaVoz(respostaIA);
+            falarComAvatar(textoLimpoVoz);
 
             input.placeholder = "Faça uma pergunta sobre a física...";
             input.disabled = false;
