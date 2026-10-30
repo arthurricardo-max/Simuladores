@@ -49,20 +49,27 @@
             transform: scale(1.02);
         }
 
-        /* Canvas visualizer style */
         .preview-canvas {
             width: 100%;
             height: 140px;
             background-color: #05080e;
             border-radius: 0.5rem;
         }
+
+        .chat-scroll::-webkit-scrollbar {
+            width: 4px;
+        }
+        .chat-scroll::-webkit-scrollbar-thumb {
+            background: #1f2937;
+            border-radius: 4px;
+        }
     </style>
 </head>
-<body class="min-h-screen flex flex-col justify-between">
+<body class="min-h-screen flex flex-col justify-between relative pb-24">
 
     <div>
         <!-- Navigation Bar -->
-        <nav class="border-b border-gray-800 bg-opacity-50 bg-gray-900 backdrop-blur-md sticky top-0 z-50">
+        <nav class="border-b border-gray-800 bg-opacity-50 bg-gray-900 backdrop-blur-md sticky top-0 z-40">
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
                 <div class="flex items-center space-x-3">
                     <div class="p-2 bg-cyan-500/10 rounded-lg border border-cyan-500/30">
@@ -94,7 +101,6 @@
                 Ambiente autônomo de simulação em tempo real para investigação de conceitos, modelagem matemática e experimentação multissensorial.
             </p>
 
-            <!-- Badges -->
             <div class="flex flex-wrap justify-center gap-3 text-xs text-gray-300 mb-10">
                 <span class="px-3 py-1.5 rounded-md bg-gray-800/80 border border-gray-700/60 flex items-center gap-2">
                     <i class="fa-solid fa-bolt text-amber-400"></i> Simulação 60 FPS
@@ -121,11 +127,7 @@
                 <!-- CARD 1: Capacitores -->
                 <div class="glass-card rounded-2xl p-5 flex flex-col justify-between card-item" data-title="circuitos eletricos capacitor rc carga descarga">
                     <div>
-                        <!-- DICA DE IMAGEM: Você pode substituir a canvas abaixo por uma tag img se preferir:
-                        <img src="imagens/capacitor.jpg" alt="Capacitor" class="w-full h-36 object-cover rounded-lg mb-4"> 
-                        -->
                         <canvas id="canvasCapacitor" class="preview-canvas mb-4"></canvas>
-                        
                         <div class="flex items-center justify-between mb-2">
                             <span class="text-xs font-semibold text-cyan-400 tracking-wider uppercase">Eletromagnetismo</span>
                             <span class="text-xs text-gray-500 font-mono">simulacao1.html</span>
@@ -145,7 +147,6 @@
                 <div class="glass-card rounded-2xl p-5 flex flex-col justify-between card-item" data-title="colisoes unidimensionais 1d conservacao momento energia elastica inelastica">
                     <div>
                         <canvas id="canvasColisao" class="preview-canvas mb-4"></canvas>
-                        
                         <div class="flex items-center justify-between mb-2">
                             <span class="text-xs font-semibold text-cyan-400 tracking-wider uppercase">Mecânica Clássica</span>
                             <span class="text-xs text-gray-500 font-mono">simulacao2.html</span>
@@ -165,7 +166,6 @@
                 <div class="glass-card rounded-2xl p-5 flex flex-col justify-between card-item" data-title="pendulo simples mhs movimento harmonico gravidade oscilacoes">
                     <div>
                         <canvas id="canvasPendulo" class="preview-canvas mb-4"></canvas>
-
                         <div class="flex items-center justify-between mb-2">
                             <span class="text-xs font-semibold text-cyan-400 tracking-wider uppercase">Oscilações</span>
                             <span class="text-xs text-gray-500 font-mono">simulacao3.html</span>
@@ -185,7 +185,6 @@
                 <div class="glass-card rounded-2xl p-5 flex flex-col justify-between card-item" data-title="conducao termica calor difusao fourier gradiente temperatura">
                     <div>
                         <canvas id="canvasTermica" class="preview-canvas mb-4"></canvas>
-
                         <div class="flex items-center justify-between mb-2">
                             <span class="text-xs font-semibold text-cyan-400 tracking-wider uppercase">Termodinâmica</span>
                             <span class="text-xs text-gray-500 font-mono">simulacao4.html</span>
@@ -205,7 +204,6 @@
                 <div class="glass-card rounded-2xl p-5 flex flex-col justify-between card-item" data-title="queda livre lancamento projetil gravidade cinematica">
                     <div>
                         <canvas id="canvasQueda" class="preview-canvas mb-4"></canvas>
-
                         <div class="flex items-center justify-between mb-2">
                             <span class="text-xs font-semibold text-cyan-400 tracking-wider uppercase">Cinemática</span>
                             <span class="text-xs text-gray-500 font-mono">simulacao5.html</span>
@@ -225,7 +223,6 @@
                 <div class="glass-card rounded-2xl p-5 flex flex-col justify-between card-item" data-title="ondas progressivas acustica frequencia audio senoidal osciloscopio">
                     <div>
                         <canvas id="canvasOndas" class="preview-canvas mb-4"></canvas>
-
                         <div class="flex items-center justify-between mb-2">
                             <span class="text-xs font-semibold text-cyan-400 tracking-wider uppercase">Ondulatória e Acústica</span>
                             <span class="text-xs text-gray-500 font-mono">simulacao6.html</span>
@@ -245,6 +242,57 @@
         </main>
     </div>
 
+    <!-- PAINEL FIXO DO AVATAR AI -->
+    <div id="avatarWidget" class="fixed bottom-6 right-6 z-50 flex flex-col items-end transition-all duration-300">
+        
+        <div id="avatarBox" class="bg-gray-900/95 border border-cyan-500/40 rounded-2xl shadow-2xl backdrop-blur-md overflow-hidden transition-all duration-300 w-[280px] sm:w-[320px]">
+            
+            <div class="bg-gray-950 px-3 py-2 border-b border-gray-800 flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                    <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                    <span class="text-xs font-semibold text-cyan-400 tracking-wide">Tutor IA de Física</span>
+                </div>
+                
+                <div class="flex items-center gap-2 text-gray-400 text-xs">
+                    <button onclick="toggleAudio()" id="btnAudio" title="Mutar/Ativar Áudio" class="hover:text-cyan-400 transition-colors p-1">
+                        <i class="fa-solid fa-volume-high text-cyan-400" id="iconAudio"></i>
+                    </button>
+                    <button onclick="toggleAvatarWidget()" title="Minimizar Avatar" class="hover:text-white transition-colors p-1">
+                        <i class="fa-solid fa-chevron-down" id="iconMinimize"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Renderizador do Avatar AI -->
+            <div id="ai-avatar" class="w-full h-[220px] bg-black/40 relative">
+                <button id="btnStartWelcome" onclick="iniciarApresentacaoComAudio()" class="absolute inset-0 m-auto w-fit h-fit px-4 py-2 bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold text-xs rounded-xl shadow-lg flex items-center gap-2 border border-cyan-300 z-10 transition-transform active:scale-95">
+                    <i class="fa-solid fa-play"></i>
+                    <span>Ativar Guia de Voz</span>
+                </button>
+            </div>
+
+            <div class="p-3 bg-gray-950/90 border-t border-gray-800 flex flex-col gap-2">
+                <div id="chatHistory" class="chat-scroll h-24 overflow-y-auto flex flex-col gap-1.5 text-xs pr-1">
+                    <div class="bg-cyan-950/40 border border-cyan-800/40 text-cyan-200 p-2 rounded-lg">
+                        👋 Olá! Faça uma pergunta ao tutor ou ative o áudio acima.
+                    </div>
+                </div>
+
+                <form onsubmit="enviarMensagemTexto(event)" class="flex gap-1.5 mt-1">
+                    <input type="text" id="chatInput" placeholder="Faça uma pergunta sobre a física..." 
+                           class="w-full bg-gray-900 border border-gray-700 rounded-lg px-3 py-1.5 text-xs text-gray-200 placeholder-gray-500 focus:outline-none focus:border-cyan-500 transition-all">
+                    <button type="submit" id="btnSubmitChat" class="gradient-btn px-3 py-1.5 rounded-lg text-xs flex items-center justify-center shrink-0">
+                        <i class="fa-solid fa-paper-plane"></i>
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <button id="btnExpandAvatar" onclick="toggleAvatarWidget()" class="hidden gradient-btn p-3.5 rounded-full shadow-2xl flex items-center justify-center text-lg border border-cyan-300/40">
+            <i class="fa-solid fa-robot"></i>
+        </button>
+    </div>
+
     <footer class="border-t border-gray-800/80 bg-gray-950 py-8">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-gray-500">
             <div class="flex items-center space-x-2">
@@ -257,8 +305,210 @@
         </div>
     </footer>
 
+    <!-- SCRIPT DO SDK AVATAR AI -->
+    <script type="module" src="https://embed.avataraisdk.com/sdk.js"></script>
+    <script type="module">
+        window.avatar = AIAvatar.init({
+            apiKey: 'sk-66814e87e797a32fdd3209cc8dfb9cf7db3e9d4e0abc5763',
+            mount: '#ai-avatar',
+            onError(e) { console.error('[AIAvatar Error]', e.code, e.message); },
+        });
+    </script>
+
     <script>
-        // --- 1. Filtro de Pesquisa ---
+        let isMuted = false;
+
+        // Histórico da conversa mantido em memória para dar contexto ao LLM
+        let historicoConversa = [
+            {
+                role: "system",
+                content: "Você é o Tutor Virtual de Física do Laboratório. Responda em português de forma clara, entusiasmada e objetiva (no máximo 2 a 3 frases). REGRA OBRIGATÓRIA DE FORMATAÇÃO: NUNCA use formatação LaTeX (como \\(, \\), \\frac, \\times) e NUNCA use marcadores Markdown (** ou #). Escreva fórmulas em texto puro simples e legível (exemplo: h = (g*t^2)/2 ou v = v0 + g*t), pois sua resposta será lida em voz alta por síntese de áudio."
+            }
+        ];
+
+        function toggleAudio() {
+            isMuted = !isMuted;
+            const icon = document.getElementById('iconAudio');
+            if (isMuted) {
+                icon.className = 'fa-solid fa-volume-xmark text-rose-400';
+                if (window.speechSynthesis) window.speechSynthesis.cancel();
+            } else {
+                icon.className = 'fa-solid fa-volume-high text-cyan-400';
+            }
+        }
+
+        function iniciarApresentacaoComAudio() {
+            const btn = document.getElementById('btnStartWelcome');
+            if (btn) btn.style.display = 'none';
+
+            falarComAvatar("Olá! Bem-vindo ao Laboratório Virtual de Física. Como posso ajudar nas suas simulações hoje?");
+        }
+
+        // --- SANITIZADOR PARA REMOVER LATEX E MARKDOWN (VOZ E UI) ---
+        function limparFormatacaoParaVoz(texto) {
+            if (!texto) return "";
+            return texto
+                .replace(/\\\(|\\\)/g, '')
+                .replace(/\\\[|\\\]/g, '')
+                .replace(/\\frac\{([^}]+)\}\{([^}]+)\}/g, '($1/$2)')
+                .replace(/\*\*/g, '')
+                .replace(/\*/g, '')
+                .replace(/_([0-9a-zA-Z])/g, '$1')
+                .replace(/\\/g, '')
+                .trim();
+        }
+
+        // --- INTEGRAÇÃO GROQ COM HISTÓRICO DE CONVERSA (LLAMA 3.3 70B) ---
+        async function chamarLLM(promptUsuario) {
+            const apiKey = "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"; 
+
+            if (!apiKey) {
+                return "⚠️ Erro: A chave da API da Groq não foi fornecida.";
+            }
+
+            const url = "https://api.groq.com/openai/v1/chat/completions";
+
+            // Adiciona a pergunta atual ao histórico contínuo
+            historicoConversa.push({ role: "user", content: promptUsuario });
+
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 8000);
+
+            try {
+                const response = await fetch(url, {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "Authorization": `Bearer ${apiKey}`
+                    },
+                    signal: controller.signal,
+                    body: JSON.stringify({
+                        model: "openai/gpt-oss-120b",
+                        messages: historicoConversa,
+                        temperature: 0.5,
+                        max_tokens: 350
+                    })
+                });
+
+                clearTimeout(timeoutId);
+                const data = await response.json();
+
+                if (!response.ok) {
+                    historicoConversa.pop(); // Remove a pergunta que falhou para manter a integridade
+                    console.error("Erro da API da Groq:", data);
+                    return `⚠️ Erro na API Groq (${response.status}): ${data.error?.message || 'Falha na requisição.'}`;
+                }
+
+                const textoBruto = data.choices[0].message.content;
+                const textoLimpo = limparFormatacaoParaVoz(textoBruto);
+
+                // Armazena a resposta tratada no histórico da conversa
+                historicoConversa.push({ role: "assistant", content: textoLimpo });
+
+                return textoLimpo;
+
+            } catch (err) {
+                clearTimeout(timeoutId);
+                historicoConversa.pop(); // Remove a pergunta em caso de erro de rede
+                console.error("Erro de Conexão:", err);
+
+                if (err.name === 'AbortError') {
+                    return "⚠️ A requisição expirou. Tente novamente.";
+                }
+                return `⚠️ Erro de conexão: ${err.message || 'Servidor inacessível.'}`;
+            }
+        }
+
+        // --- SÍNTESE DE VOZ COM FALLBACK AUTOMÁTICO ---
+        function falarComAvatar(texto) {
+            if (isMuted) return;
+
+            try {
+                if (window.avatar && typeof window.avatar.speak === 'function') {
+                    window.avatar.speak(texto);
+                    return;
+                }
+            } catch (e) {
+                console.warn("Avatar SDK indisponível. Alternando para a voz nativa.", e);
+            }
+
+            if ('speechSynthesis' in window) {
+                window.speechSynthesis.cancel();
+                const utterance = new SpeechSynthesisUtterance(texto);
+                utterance.lang = 'pt-BR';
+                window.speechSynthesis.speak(utterance);
+            }
+        }
+
+        // --- MANIPULADOR DO CHAT COM INDICADOR DE 'PENSANDO' ---
+        async function enviarMensagemTexto(e) {
+            e.preventDefault();
+            const input = document.getElementById('chatInput');
+            const userText = input.value.trim();
+
+            if (!userText) return;
+
+            const btnWelcome = document.getElementById('btnStartWelcome');
+            if (btnWelcome) btnWelcome.style.display = 'none';
+
+            const chatHistory = document.getElementById('chatHistory');
+
+            // 1. Exibe a mensagem do Aluno
+            const userMsgDiv = document.createElement('div');
+            userMsgDiv.className = 'bg-gray-800 border border-gray-700 text-gray-200 p-2 rounded-lg self-end text-right ml-4';
+            userMsgDiv.textContent = userText;
+            chatHistory.appendChild(userMsgDiv);
+
+            input.value = '';
+            input.placeholder = "Aguarde a resposta...";
+            input.disabled = true;
+            chatHistory.scrollTop = chatHistory.scrollHeight;
+
+            // 2. Exibe indicador visual de carregamento
+            const thinkingDiv = document.createElement('div');
+            thinkingDiv.id = 'thinkingIndicator';
+            thinkingDiv.className = 'bg-cyan-950/40 border border-cyan-800/40 text-cyan-300 p-2 rounded-lg mr-4 flex items-center gap-2 italic animate-pulse';
+            thinkingDiv.innerHTML = '<i class="fa-solid fa-circle-notch animate-spin text-cyan-400"></i> O tutor está pensando...';
+            chatHistory.appendChild(thinkingDiv);
+            chatHistory.scrollTop = chatHistory.scrollHeight;
+
+            // 3. Consulta a API da Groq
+            const respostaIA = await chamarLLM(userText);
+
+            // 4. Remove o indicador de carregamento
+            const currentThinking = document.getElementById('thinkingIndicator');
+            if (currentThinking) {
+                currentThinking.remove();
+            }
+
+            // 5. Exibe a resposta final limpa
+            const botMsgDiv = document.createElement('div');
+            botMsgDiv.className = 'bg-cyan-950/50 border border-cyan-800/60 text-cyan-200 p-2 rounded-lg mr-4';
+            botMsgDiv.textContent = "🤖 " + respostaIA;
+            chatHistory.appendChild(botMsgDiv);
+            chatHistory.scrollTop = chatHistory.scrollHeight;
+
+            // 6. Reproduz a voz
+            falarComAvatar(respostaIA);
+
+            input.placeholder = "Faça uma pergunta sobre a física...";
+            input.disabled = false;
+            input.focus();
+        }
+
+        function toggleAvatarWidget() {
+            const avatarBox = document.getElementById('avatarBox');
+            const btnExpand = document.getElementById('btnExpandAvatar');
+
+            if (avatarBox.classList.contains('hidden')) {
+                avatarBox.classList.remove('hidden');
+                btnExpand.classList.add('hidden');
+            } else {
+                avatarBox.classList.add('hidden');
+                btnExpand.classList.remove('hidden');
+            }
+        }
+
         function filterCards() {
             const query = document.getElementById('searchInput').value.toLowerCase();
             const cards = document.querySelectorAll('.card-item');
@@ -273,18 +523,13 @@
             });
         }
 
-        // --- 2. Animações Dinâmicas dos Cards em Canvas (Pre-visualizações) ---
+        // Animações de Pré-visualização dos Canvas
         let time = 0;
-
-        // Physics State for Preview 2 (Elastic Collisions)
         let col1 = { x: 0, v: 2.2, radius: 10, mass: 1, color: '#00f2fe' };
         let col2 = { x: 0, v: -1.8, radius: 10, mass: 1, color: '#ff4757' };
-
-        // Physics State for Preview 5 (Bouncing Free Fall)
         let ball = { y: 20, vy: 0, gravity: 0.38, restitution: 0.72, radius: 8 };
 
         function initCanvasPreviews() {
-            // Setup Canvases
             const c1 = document.getElementById('canvasCapacitor');
             const c2 = document.getElementById('canvasColisao');
             const c3 = document.getElementById('canvasPendulo');
@@ -300,7 +545,6 @@
                 }
             });
 
-            // Set initial dynamic positions for collision preview
             if (c2) {
                 col1.x = c2.width * 0.25;
                 col2.x = c2.width * 0.75;
@@ -309,7 +553,6 @@
             function render() {
                 time += 0.03;
 
-                // 1. Capacitor (Carga piscando/circuito)
                 if (c1) {
                     const ctx = c1.getContext('2d');
                     ctx.clearRect(0, 0, c1.width, c1.height);
@@ -318,47 +561,32 @@
                     ctx.beginPath();
                     ctx.rect(c1.width*0.2, c1.height*0.2, c1.width*0.6, c1.height*0.6);
                     ctx.stroke();
-                    // Placas do capacitor
                     ctx.fillStyle = '#4facfe';
                     const charge = (Math.sin(time*2) + 1) / 2;
                     ctx.fillRect(c1.width*0.45, c1.height*0.3, 6, c1.height*0.4);
                     ctx.fillRect(c1.width*0.55, c1.height*0.3, 6, c1.height*0.4);
-                    // Brilho do campo
                     ctx.fillStyle = `rgba(0, 242, 254, ${charge * 0.5})`;
                     ctx.fillRect(c1.width*0.45 + 6, c1.height*0.3, c1.width*0.1 - 6, c1.height*0.4);
                 }
 
-                // 2. Colisão (Duas esferas com colisão elástica real 1D)
                 if (c2) {
                     const ctx = c2.getContext('2d');
                     ctx.clearRect(0, 0, c2.width, c2.height);
-
-                    // Update positions
                     col1.x += col1.v;
                     col2.x += col2.v;
 
-                    // Wall boundaries
                     const minX = c2.width * 0.15;
                     const maxX = c2.width * 0.85;
 
-                    if (col1.x - col1.radius < minX) {
-                        col1.x = minX + col1.radius;
-                        col1.v *= -1;
-                    }
-                    if (col2.x + col2.radius > maxX) {
-                        col2.x = maxX - col2.radius;
-                        col2.v *= -1;
-                    }
+                    if (col1.x - col1.radius < minX) { col1.x = minX + col1.radius; col1.v *= -1; }
+                    if (col2.x + col2.radius > maxX) { col2.x = maxX - col2.radius; col2.v *= -1; }
 
-                    // Ball-to-ball elastic collision detection
                     const dist = Math.abs(col1.x - col2.x);
                     if (dist < col1.radius + col2.radius) {
-                        // Separate balls to prevent sticking
                         const overlap = (col1.radius + col2.radius) - dist;
                         col1.x -= overlap / 2;
                         col2.x += overlap / 2;
 
-                        // 1D Elastic Collision Formula (equal masses)
                         const v1f = ((col1.mass - col2.mass) * col1.v + 2 * col2.mass * col2.v) / (col1.mass + col2.mass);
                         const v2f = ((col2.mass - col1.mass) * col2.v + 2 * col1.mass * col1.v) / (col1.mass + col2.mass);
 
@@ -366,7 +594,6 @@
                         col2.v = v2f;
                     }
 
-                    // Render track bounds
                     ctx.strokeStyle = '#1f2937';
                     ctx.lineWidth = 2;
                     ctx.beginPath();
@@ -374,7 +601,6 @@
                     ctx.lineTo(maxX + col2.radius, c2.height * 0.65);
                     ctx.stroke();
 
-                    // Render Ball 1
                     ctx.beginPath();
                     ctx.arc(col1.x, c2.height * 0.5, col1.radius, 0, Math.PI * 2);
                     ctx.fillStyle = col1.color;
@@ -382,18 +608,15 @@
                     ctx.shadowBlur = 8;
                     ctx.fill();
 
-                    // Render Ball 2
                     ctx.beginPath();
                     ctx.arc(col2.x, c2.height * 0.5, col2.radius, 0, Math.PI * 2);
                     ctx.fillStyle = col2.color;
                     ctx.shadowColor = col2.color;
                     ctx.shadowBlur = 8;
                     ctx.fill();
-
-                    ctx.shadowBlur = 0; // Reset blur
+                    ctx.shadowBlur = 0;
                 }
 
-                // 3. Pêndulo
                 if (c3) {
                     const ctx = c3.getContext('2d');
                     ctx.clearRect(0, 0, c3.width, c3.height);
@@ -417,7 +640,6 @@
                     ctx.fill();
                 }
 
-                // 4. Condução Térmica (Gradiente)
                 if (c4) {
                     const ctx = c4.getContext('2d');
                     ctx.clearRect(0, 0, c4.width, c4.height);
@@ -428,30 +650,24 @@
                     ctx.fillRect(c4.width*0.15, c4.height*0.4, c4.width*0.7, c4.height*0.2);
                 }
 
-                // 5. Queda Livre com Quique e Dissipação
                 if (c5) {
                     const ctx = c5.getContext('2d');
                     ctx.clearRect(0, 0, c5.width, c5.height);
-
                     const groundY = c5.height * 0.82;
 
-                    // Physics update
                     ball.vy += ball.gravity;
                     ball.y += ball.vy;
 
-                    // Ground collision with restitution coefficient
                     if (ball.y + ball.radius >= groundY) {
                         ball.y = groundY - ball.radius;
                         ball.vy = -ball.vy * ball.restitution;
 
-                        // Reset simulation when energy degrades below threshold
                         if (Math.abs(ball.vy) < 0.8) {
                             ball.y = 18;
                             ball.vy = 0;
                         }
                     }
 
-                    // Render ground platform
                     ctx.strokeStyle = '#374151';
                     ctx.lineWidth = 3;
                     ctx.beginPath();
@@ -459,7 +675,6 @@
                     ctx.lineTo(c5.width * 0.75, groundY);
                     ctx.stroke();
 
-                    // Render falling/bouncing ball
                     ctx.beginPath();
                     ctx.arc(c5.width * 0.5, ball.y, ball.radius, 0, Math.PI * 2);
                     ctx.fillStyle = '#2ed573';
@@ -469,7 +684,6 @@
                     ctx.shadowBlur = 0;
                 }
 
-                // 6. Ondas
                 if (c6) {
                     const ctx = c6.getContext('2d');
                     ctx.clearRect(0, 0, c6.width, c6.height);
